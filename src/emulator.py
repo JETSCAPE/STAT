@@ -77,7 +77,7 @@ class Emulator:
 
         # cache the __dict__ rather than the Emulator instance itself
         # this way the __name__ doesn't matter, e.g. a pickled
-        # __main__.Emulator can be unpickled as a qm.emulator.Emulator
+        # __main__.Emulator can be unpickled as a src.emulator.Emulator
         if cachefile.exists():
             logging.debug('loading emulator for system %s from cache', system)
             emu = cls.__new__(cls)

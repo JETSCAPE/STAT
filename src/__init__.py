@@ -1,4 +1,4 @@
-""" Quark Matter 2017 Python package """
+""" Bayesian parameter estimation for relativistic heavy-ion collisions """
 
 import logging
 import os
@@ -13,7 +13,7 @@ logging.basicConfig(
     level=os.getenv('LOGLEVEL', 'info').upper()
 )
 
-workdir = Path(os.getenv('QMDIR', '.'))
+workdir = Path(os.getenv('WORKDIR', '.'))
 
 cachedir = workdir / 'cache'
 cachedir.mkdir(parents=True, exist_ok=True)
