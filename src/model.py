@@ -22,12 +22,12 @@ def csq(x):
     return (x*x.conj()).real
 
 
-def corr2(Qn, M):
+def corr2(Qn, N):
     """
     Compute the two-particle correlation <v_n^2>.
 
     """
-    return (csq(Qn) - M).sum() / (M*(M - 1)).sum()
+    return (csq(Qn) - N).sum() / (N*(N - 1)).sum()
 
 
 def symmetric_cumulant(events, m, n):
@@ -35,20 +35,20 @@ def symmetric_cumulant(events, m, n):
     Compute the symmetric cumulant SC(m, n).
 
     """
-    M = np.asarray(events['M'], dtype=float)
-    Q = dict(enumerate(events['Qn'].T, start=1))
+    N = np.asarray(events['flow']['N'], dtype=float)
+    Q = dict(enumerate(events['flow']['Qn'].T, start=1))
 
     cm2n2 = (
         csq(Q[m]) * csq(Q[n])
         - 2*(Q[m+n] * Q[m].conj() * Q[n].conj()).real
         - 2*(Q[m] * Q[m-n].conj() * Q[n].conj()).real
         + csq(Q[m+n]) + csq(Q[m-n])
-        - (M - 4)*(csq(Q[m]) + csq(Q[n]))
-        + M*(M - 6)
-    ).sum() / (M*(M - 1)*(M - 2)*(M - 3)).sum()
+        - (N - 4)*(csq(Q[m]) + csq(Q[n]))
+        + N*(N - 6)
+    ).sum() / (N*(N - 1)*(N - 2)*(N - 3)).sum()
 
-    cm2 = corr2(Q[m], M)
-    cn2 = corr2(Q[n], M)
+    cm2 = corr2(Q[m], N)
+    cn2 = corr2(Q[n], N)
 
     return cm2n2 - cm2*cn2
 
@@ -66,15 +66,17 @@ class ModelData:
     computes centrality-binned observables.
 
     """
+    species = ['pion', 'kaon', 'proton', 'Lambda', 'Sigma0', 'Xi', 'Omega']
+
     dtype = np.dtype([
         ('initial_entropy', float_t),
-        ('mult_factor', float_t),
         ('nsamples', int_t),
         ('dNch_deta', float_t),
-        ('dN_dy', [(s, float_t) for s in ['pion', 'kaon', 'proton']]),
-        ('mean_pT', [(s, float_t) for s in ['pion', 'kaon', 'proton']]),
-        ('M', int_t),
-        ('Qn', complex_t, 6),
+        ('dET_deta', float_t),
+        ('dN_dy', [(s, float_t) for s in species]),
+        ('mean_pT', [(s, float_t) for s in species]),
+        ('pT_fluct', [('N', int_t), ('sum_pT', float_t), ('sum_pTsq', float_t)]),
+        ('flow', [('N', int_t), ('Qn', complex_t, 8)]),
     ])
 
     def __init__(self, *files):
@@ -132,7 +134,7 @@ class ModelData:
                 n = obs_stack.pop()
                 k = 4 if obs == 'vn4' else 2
                 return lambda events: flow.Cumulant(
-                    events['M'], *events['Qn'].T[1:]
+                    events['flow']['N'], *events['flow']['Qn'].T[1:]
                 ).flow(n, k, imaginary='zero')
 
             if obs.startswith('sc'):
