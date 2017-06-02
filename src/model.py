@@ -130,12 +130,11 @@ class ModelData:
                     weights=events['dN_dy'][species]
                 )
 
-            if obs.startswith('vn'):
-                n = obs_stack.pop()
-                k = 4 if obs == 'vn4' else 2
+            if obs.startswith('vnk'):
+                nk = obs_stack.pop()
                 return lambda events: flow.Cumulant(
                     events['flow']['N'], *events['flow']['Qn'].T[1:]
-                ).flow(n, k, imaginary='zero')
+                ).flow(*nk, imaginary='zero')
 
             if obs.startswith('sc'):
                 mn = obs_stack.pop()
@@ -158,22 +157,19 @@ class ModelData:
         )
 
 
-def observables(system, map_point=False):
+def _training_data(system):
     """
-    Compute model observables for the given system to match the corresponding
-    experimental data.
+    Compute training data (model observables at all design points) for the
+    given system.
 
     """
-    if map_point:
-        files = [Path('map', system)]
-        cachefile = Path(system + '_map')
-    else:
-        # expected filenames for each design point
-        files = [Path(system, p) for p in Design(system).points]
-        cachefile = Path(system)
+    # expected filenames for each design point
+    files = [
+        Path(workdir, 'model_output', 'main', system, '{}.dat'.format(p))
+        for p in Design(system).points
+    ]
 
-    files = [workdir / 'model_output' / f.with_suffix('.dat') for f in files]
-    cachefile = cachedir / 'model' / cachefile.with_suffix('.pkl')
+    cachefile = Path(cachedir, 'model', '{}.pkl'.format(system))
 
     if cachefile.exists():
         # use the cache unless any of the model data files are newer
@@ -189,35 +185,18 @@ def observables(system, map_point=False):
     else:
         logging.debug('cache file %s does not exist', cachefile)
 
-    logging.info(
-        'loading %s%s event data and computing observables',
-        system,
-        '_map' if map_point else ''
-    )
+    logging.info('loading %s training data and computing observables', system)
 
     data = expt.data[system]
 
-    # identified particle data are not yet available for PbPb5020
-    # create dummy entries for these observables so that they are computed for
-    # the model
+    # some data are not yet available for PbPb5020
+    # create dummy entries so that they are computed for the model
     if system == 'PbPb5020':
         data = dict(
-            ((obs, expt.data['PbPb2760'][obs])
-             for obs in ['dN_dy', 'mean_pT']),
+            ((obs, obsdata) for obs, obsdata in
+             expt.data['PbPb2760'].items() if obs not in data),
             **data
         )
-
-    # also compute "extra" data for the MAP point
-    if map_point:
-        data = dict(expt.extra_data[system], **data)
-        # flow correlations and central flow not yet available for PbPb5020
-        if system == 'PbPb5020':
-            data = dict(
-                ((obs, expt.extra_data['PbPb2760'][obs])
-                for obs in ['sc', 'sc_central', 'vn_central']),
-                **data
-            )
-
 
     data = ModelData(*files).observables_like(data)
 
@@ -228,13 +207,9 @@ def observables(system, map_point=False):
     return data
 
 
-data = {s: observables(s) for s in systems}
-map_data = {s: observables(s, map_point=True) for s in systems}
+data = {s: _training_data(s) for s in systems}
 
 
 if __name__ == '__main__':
     from pprint import pprint
-    print('design:')
     pprint(data)
-    print('map:')
-    pprint(map_data)

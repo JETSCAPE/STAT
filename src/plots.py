@@ -200,7 +200,7 @@ def _observables_plots():
         ]
 
     flows = [
-        ('vn', n, '$v_{}$'.format(n), c)
+        ('vnk', (n, 2), '$v_{}$'.format(n), c)
         for n, c in enumerate(['GnBu', 'Purples', 'Oranges'], start=2)
     ]
 
@@ -247,7 +247,7 @@ def _observables(posterior=False):
 
             ax.text(
                 x[-1] + 2.5,
-                model.map_data[system][obs][subobs]['Y'][-1] * factor,
+                np.median(Y[:, -1]) * factor,
                 label,
                 color=darken(color), ha='left', va='center'
             )
@@ -379,7 +379,7 @@ def observables_map():
             )
 
         ax.set_ylabel(ylabel)
-        ax.set_ylim({'mean_pT': (0, 1.75), 'vn': (0, .12)}.get(obs, ylim))
+        ax.set_ylim({'mean_pT': (0, 1.75), 'vnk': (0, .12)}.get(obs, ylim))
 
         ratio_ax.axhline(1, lw=.5, color='0.5', zorder=-100)
         ratio_ax.axhspan(0.9, 1.1, color='0.95', zorder=-200)
@@ -816,7 +816,7 @@ def flow_corr():
             x = model.map_data[sys][obs][mn]['x']
             y = model.map_data[sys][obs][mn]['Y']
 
-            pred = obs not in expt.extra_data[sys]
+            pred = obs not in expt.data[sys]
             cmapx = cmapx_pred if pred else cmapx_normal
 
             kwargs = {}
@@ -847,9 +847,9 @@ def flow_corr():
             if pred:
                 continue
 
-            x = expt.extra_data[sys][obs][mn]['x']
-            y = expt.extra_data[sys][obs][mn]['y']
-            yerr = expt.extra_data[sys][obs][mn]['yerr']
+            x = expt.data[sys][obs][mn]['x']
+            y = expt.data[sys][obs][mn]['y']
+            yerr = expt.data[sys][obs][mn]['yerr']
 
             ax.errorbar(
                 x, y, yerr=yerr['stat'],
@@ -890,8 +890,8 @@ def flow_extra():
 
     """
     plots, width_ratios = zip(*[
-        (('vn_central', 'Central two-particle cumulants', r'$v_n\{2\}$'), 2),
-        (('vn4', 'Four-particle cumulants', r'$v_2\{4\}$'), 3),
+        (('vnk_central', 'Central two-particle cumulants', r'$v_n\{2\}$'), 2),
+        (('vnk', 'Four-particle cumulants', r'$v_2\{4\}$'), 3),
     ])
 
     fig, axes = plt.subplots(
@@ -920,7 +920,7 @@ def flow_extra():
                 )
 
                 try:
-                    dset = expt.extra_data[sys][obs][subobs]
+                    dset = expt.data[sys][obs][subobs]
                 except KeyError:
                     continue
 
@@ -939,7 +939,7 @@ def flow_extra():
                     color='.9', zorder=-10
                 )
 
-                if obs == 'vn_central':
+                if obs == 'vnk_central':
                     ax.text(
                         x[-1] + .15, y[-1], '$v_{}$'.format(subobs),
                         color=cmaps[subobs](.99), ha='left', va='center'
@@ -1075,7 +1075,7 @@ def pca():
 
     x, y = (
         model.data['PbPb2760'][obs][subobs]['Y'][:, 3]
-        for obs, subobs in [('dN_dy', 'pion'), ('vn', 2)]
+        for obs, subobs in [('dN_dy', 'pion'), ('vnk', (2, 2))]
     )
     xlabel = r'$dN_{\pi^\pm}/dy$'
     ylabel = r'$v_2\{2\}$'

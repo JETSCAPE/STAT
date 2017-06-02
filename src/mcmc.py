@@ -49,6 +49,16 @@ class Chain:
     system designs have the same parameters and ranges (except for the norms).
 
     """
+    # calibration observables
+    # list of 2-tuples: (obs, [list of subobs])
+    # each obs is checked for each system and silently ignored if not found
+    observables = [
+        ('dNch_deta', [None]),
+        ('dN_dy', ['pion', 'kaon', 'proton']),
+        ('mean_pT', ['pion', 'kaon', 'proton']),
+        ('vnk', [(2, 2), (3, 2), (4, 2)]),
+    ]
+
     def __init__(
             self, model_staterr_frac=.05,
             path=workdir / 'mcmc' / 'chain.hdf'
@@ -112,9 +122,14 @@ class Chain:
             Y = self._predict(X[inside])
 
             for sys, sysdata in expt.data.items():
-                for obs, obsdata in sysdata.items():
-                    for subobs, dset in obsdata.items():
-                        dY = Y[sys][obs][subobs] - dset['y']
+                for obs, subobslist in self.observables:
+                    try:
+                        obsdata = sysdata[obs]
+                    except KeyError:
+                        continue
+
+                    for subobs in subobslist:
+                        dY = Y[sys][obs][subobs] - obsdata[subobs]['y']
                         lp[inside] += np.einsum(
                             'ij,ki,kj->k',
                             self.cov_inv[sys][obs][subobs],

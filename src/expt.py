@@ -1,7 +1,6 @@
 """ experimental data """
 
 from collections import defaultdict
-from itertools import compress
 import logging
 import pickle
 from urllib.request import urlopen
@@ -12,102 +11,129 @@ import yaml
 from . import cachedir, systems
 
 
-# TODO improve flow cumulant observable keys:
-# cumulant v_n{k} should have obs == 'vnk' and subobs == (n, k)
-
-
 class HEPData:
     """
     Interface to a HEPData yaml file.
 
-    Ignore centrality bins above the specified `maxcent`.
+    Downloads and caches the dataset specified by the INSPIRE record and table
+    number.  The web UI for `inspire_rec` may be found at:
+
+        https://hepdata.net/record/ins`inspire_rec`
 
     """
-    def __init__(self, inspire_rec, table, version=1, maxcent=80):
+    def __init__(self, inspire_rec, table):
         cachefile = (
             cachedir / 'hepdata' /
             'ins{}_table{}.pkl'.format(inspire_rec, table)
         )
-        logging.debug('loading hepdata record %s table %s', inspire_rec, table)
+        name = 'record {} table {}'.format(inspire_rec, table)
 
         if cachefile.exists():
-            logging.debug('reading from cache')
+            logging.debug('loading from hepdata cache: %s', name)
             with cachefile.open('rb') as f:
-                self.data = pickle.load(f)
+                self._data = pickle.load(f)
         else:
-            logging.debug('not found in cache, downloading from hepdata.net')
+            logging.debug('downloading from hepdata.net: %s', name)
             cachefile.parent.mkdir(exist_ok=True)
             with cachefile.open('wb') as f, urlopen(
                     'https://hepdata.net/download/table/'
-                    'ins{}/Table{}/{}/yaml'.format(inspire_rec, table, version)
+                    'ins{}/Table{}/yaml'.format(inspire_rec, table)
             ) as u:
-                self.data = yaml.load(u)
-                pickle.dump(self.data, f, protocol=pickle.HIGHEST_PROTOCOL)
+                self._data = yaml.load(u)
+                pickle.dump(self._data, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-        # extract centrality bins
-        for x in self.data['independent_variables']:
-            if x['header']['name'].lower() == 'centrality':
-                try:
-                    cent = [(v['low'], v['high']) for v in x['values']]
-                except KeyError:
-                    # try to guess bins from midpoints
-                    mids = [v['value'] for v in x['values']]
-                    width = set(a - b for a, b in zip(mids[1:], mids[:-1]))
-                    if len(width) > 1:
-                        raise ValueError('variable bin widths')
-                    d = width.pop() / 2
-                    cent = [(m - d, m + d) for m in mids]
-                break
-
-        # select bins whose upper edge is <= maxcent
-        self._centselectors = [c[1] <= maxcent for c in cent]
-        cent = self._filtercent(cent)
-
-        # save centrality bins and midpoints as public attribute
-        self.cent = dict(
-            cent=cent,
-            x=np.array([(a + b)/2 for a, b in cent])
-        )
-
-    def _filtercent(self, values):
-        """
-        Filter `values` by the centrality selectors created in the constructor
-        (i.e. ignore bins above maxcent).
-
-        """
-        return list(compress(values, self._centselectors))
-
-    def x(self, name):
+    def x(self, name, case=True):
         """
         Get an independent variable ("x" data) with the given name.
 
+        If `case` is false, perform case-insensitive matching for the name.
+
         """
-        for x in self.data['independent_variables']:
-            if x['header']['name'] == name:
-                return self._filtercent(x['values'])
+        trans = (lambda x: x) if case else (lambda x: x.casefold())
+        name = trans(name)
+
+        for x in self._data['independent_variables']:
+            if trans(x['header']['name']) == name:
+                return x['values']
+
+        raise LookupError("no x data with name '{}'".format(name))
+
+    @property
+    def cent(self):
+        """
+        Return a list of centrality bins as (low, high) tuples.
+
+        """
+        try:
+            return self._cent
+        except AttributeError:
+            pass
+
+        x = self.x('centrality', case=False)
+
+        if x is None:
+            raise LookupError('no centrality data')
+
+        try:
+            cent = [(v['low'], v['high']) for v in x]
+        except KeyError:
+            # try to guess bins from midpoints
+            mids = [v['value'] for v in x]
+            width = set(a - b for a, b in zip(mids[1:], mids[:-1]))
+            if len(width) > 1:
+                raise RuntimeError('variable bin widths')
+            d = width.pop() / 2
+            cent = [(m - d, m + d) for m in mids]
+
+        self._cent = cent
+
+        return cent
 
     def y(self, name=None, **quals):
         """
         Get a dependent variable ("y" data) with the given name and qualifiers.
 
         """
-        for y in self.data['dependent_variables']:
+        for y in self._data['dependent_variables']:
             if name is None or y['header']['name'] == name:
                 y_quals = {q['name']: q['value'] for q in y['qualifiers']}
                 if all(y_quals[k] == v for k, v in quals.items()):
-                    return self._filtercent(y['values'])
+                    return y['values']
 
-    def dataset(self, name=None, **quals):
+        raise LookupError(
+            "no y data with name '{}' and qualifiers '{}'"
+            .format(name, quals)
+        )
+
+    def dataset(self, name=None, maxcent=80, **quals):
         """
-        Return a dict containing y values and errors along with centrality
-        data.  Arguments are passed directly to self.y().
+        Return a dict containing:
+
+            cent : list of centrality bins
+            x : np.array of centrality bin midpoints
+            y : np.array of y values
+            yerr : subdict of np.arrays of y errors
+
+        `name` and `quals` are passed to HEPData.y()
+
+        Missing y values are skipped.
+
+        Centrality bins whose upper edge is greater than `maxcent` are skipped.
 
         """
+        cent = []
         y = []
         yerr = defaultdict(list)
 
-        for v in self.y(name, **quals):
+        for c, v in zip(self.cent, self.y(name, **quals)):
+            # skip missing values
+            # skip bins whose upper edge is greater than maxcent
+            if v['value'] == '-' or c[1] > maxcent:
+                continue
+
+            cent.append(c)
             y.append(v['value'])
+
             for err in v['errors']:
                 try:
                     e = err['symerror']
@@ -122,15 +148,16 @@ class HEPData:
                 yerr[err.get('label', 'sum')].append(e)
 
         return dict(
+            cent=cent,
+            x=np.array([(a + b)/2 for a, b in cent]),
             y=np.array(y),
             yerr={k: np.array(v) for k, v in yerr.items()},
-            **self.cent
         )
 
 
-def get_calibration_data():
+def _data():
     """
-    Experimental data for model calibration.
+    Acquire all experimental data.
 
     """
     data = {s: {} for s in systems}
@@ -163,39 +190,47 @@ def get_calibration_data():
             ]
 
             data[system][obs][key] = dict(
+                dsets[0],
                 y=combine_func([d['y'] for d in dsets], axis=0),
                 yerr={
                     e: combine_func([d['yerr'][e] for d in dsets], axis=0)
                     for e in dsets[0]['yerr']
-                },
-                **d.cent
+                }
             )
 
     # PbPb2760 and PbPb5020 flows
-    for system, tables in [
-            ('PbPb5020', [1, 2, 2]),
-            ('PbPb2760', [3, 4, 4]),
+    for system, tables_nk in [
+            ('PbPb5020', [
+                (1, [(2, 2), (2, 4)]),
+                (2, [(3, 2), (4, 2)]),
+            ]),
+            ('PbPb2760', [
+                (3, [(2, 2), (2, 4)]),
+                (4, [(3, 2), (4, 2)]),
+            ]),
     ]:
-        data[system]['vn'] = {}
+        data[system]['vnk'] = {}
 
-        for n, t in enumerate(tables, start=2):
-            data[system]['vn'][n] = HEPData(1419244, t).dataset(
-                'V{}{{2, |DELTAETA|>1}}'.format(n)
-            )
+        for table, nk in tables_nk:
+            d = HEPData(1419244, table)
+            for n, k in nk:
+                data[system]['vnk'][n, k] = d.dataset(
+                    'V{}{{{}{}}}'.format(
+                        n, k, ', |DELTAETA|>1' if k == 2 else ''
+                    )
+                )
 
-    return data
+    # PbPb2760 central flows vn{2}
+    system, obs = 'PbPb2760', 'vnk_central'
+    data[system][obs] = {}
 
-
-data = get_calibration_data()
-
-
-def get_extra_data():
-    """
-    Experimental data for model verification.  These observables require many
-    more model events to compute and thus are not useful for calibration.
-
-    """
-    data = {s: {} for s in systems}
+    for n, table, sys_err_frac in [(2, 11, .025), (3, 12, .040)]:
+        dset = HEPData(900651, table).dataset()
+        # the (unlabeled) errors in the dataset are actually stat
+        dset['yerr']['stat'] = dset['yerr'].pop('sum')
+        # sys error is not provided -- use estimated fractions
+        dset['yerr']['sys'] = sys_err_frac * dset['y']
+        data[system][obs][n, 2] = dset
 
     # PbPb2760 flow correlations
     for obs, table in [('sc', 1), ('sc_central', 3)]:
@@ -205,56 +240,10 @@ def get_extra_data():
             for mn in [(3, 2), (4, 2)]
         }
 
-    # PbPb2760 central flows vn{2}
-    system, obs = 'PbPb2760', 'vn_central'
-    data[system][obs] = {}
-
-    for n, table in [(2, 11), (3, 12)]:
-        dset = HEPData(900651, table).dataset()
-        # the (unlabeled) errors in the dataset are actually stat
-        dset['yerr']['stat'] = dset['yerr'].pop('sum')
-        # estimate sys error fraction
-        dset['yerr']['sys'] = {2: .025, 3: .040}[n]*dset['y']
-        data[system][obs][n] = dset
-
-    # PbPb2760 and PbPb5020 v2{4}
-    for system, table in [('PbPb2760', 3), ('PbPb5020', 1)]:
-        cent = []
-        x = []
-        y = []
-        yerr = dict(stat=[], sys=[])
-
-        # discard missing values in these datasets
-        # TODO handle this in HEPData class
-        d = HEPData(1419244, table)
-        for v, x_, cent_ in zip(d.y('V2{4}'), d.cent['x'], d.cent['cent']):
-            value = v['value']
-            if value == '-':
-                continue
-
-            cent.append(cent_)
-            x.append(x_)
-            y.append(value)
-            for e in v['errors']:
-                yerr[e['label']].append(e['symerror'])
-
-        # fix incorrect data point
-        if system == 'PbPb5020':
-            y[0] = .036
-            yerr['stat'][0] = .003
-            yerr['sys'][0] = .0006
-
-        data[system]['vn4'] = {2: dict(
-            cent=cent,
-            x=np.array(x),
-            y=np.array(y),
-            yerr={k: np.array(v) for k, v in yerr.items()}
-        )}
-
     return data
 
 
-extra_data = get_extra_data()
+data = _data()
 
 
 def cov(x, y, yerr, stat_frac=1e-4, sys_corr_length=100, **kwargs):
@@ -300,4 +289,3 @@ def print_data(d, indent=0):
 
 if __name__ == '__main__':
     print_data(data)
-    print_data(extra_data)

@@ -21,6 +21,15 @@ class Emulator:
     analysis.
 
     """
+    # observables to emulate
+    # list of 2-tuples: (obs, [list of subobs])
+    observables = [
+        ('dNch_deta', [None]),
+        ('dN_dy', ['pion', 'kaon', 'proton']),
+        ('mean_pT', ['pion', 'kaon', 'proton']),
+        ('vnk', [(2, 2), (3, 2), (4, 2)]),
+    ]
+
     def __init__(self, system, npc=8, nrestarts=10):
         logging.info('training emulator for system %s', system)
 
@@ -28,10 +37,10 @@ class Emulator:
         self._slices = {}
 
         index = 0
-        for obs, data in model.data[system].items():
+        for obs, subobslist in self.observables:
             self._slices[obs] = {}
-            for subobs, dset in data.items():
-                Y = dset['Y']
+            for subobs in subobslist:
+                Y = model.data[system][obs][subobs]['Y']
                 arrays.append(Y)
                 n = Y.shape[1]
                 self._slices[obs][subobs] = slice(index, index + n)
