@@ -8,7 +8,7 @@ from hic import flow
 import numpy as np
 from sklearn.externals import joblib
 
-from . import workdir, cachedir, systems, expt
+from . import workdir, cachedir, systems, lazydict, expt
 from .design import Design
 
 
@@ -239,9 +239,12 @@ def _training_data(system):
     return data
 
 
-data = {s: _training_data(s) for s in systems}
+data = lazydict(_training_data)
 
 
 if __name__ == '__main__':
     from pprint import pprint
-    pprint(data)
+    for s in systems:
+        d = data[s]
+        print(s)
+        pprint(d)

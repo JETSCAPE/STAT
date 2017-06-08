@@ -11,7 +11,7 @@ from sklearn.gaussian_process import kernels
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
-from . import cachedir, systems, model
+from . import cachedir, systems, lazydict, model
 from .design import Design
 
 
@@ -150,7 +150,7 @@ class Emulator:
         )
 
 
-emulators = {s: Emulator.from_cache(s) for s in systems}
+emulators = lazydict(Emulator.from_cache)
 
 
 if __name__ == '__main__':

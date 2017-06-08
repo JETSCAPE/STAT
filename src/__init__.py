@@ -28,3 +28,16 @@ def parse_system(system):
     """
     match = re.fullmatch('([A-Z]?[a-z])([A-Z]?[a-z])([0-9]+)', system)
     return match.group(1, 2), int(match.group(3))
+
+
+class lazydict(dict):
+    """
+    A dict that populates itself on demand by calling a unary function.
+
+    """
+    def __init__(self, function):
+        self.function = function
+
+    def __missing__(self, key):
+        self[key] = value = self.function(key)
+        return value
