@@ -20,8 +20,11 @@ class HEPData:
 
         https://hepdata.net/record/ins`inspire_rec`
 
+    If `reverse` is true, reverse the order of the data table (useful for
+    tables that are given as a function of Npart).
+
     """
-    def __init__(self, inspire_rec, table):
+    def __init__(self, inspire_rec, table, reverse=False):
         cachefile = (
             cachedir / 'hepdata' /
             'ins{}_table{}.pkl'.format(inspire_rec, table)
@@ -41,6 +44,11 @@ class HEPData:
             ) as u:
                 self._data = yaml.load(u)
                 pickle.dump(self._data, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+        if reverse:
+            for v in self._data.values():
+                for d in v:
+                    d['values'].reverse()
 
     def x(self, name, case=True):
         """
@@ -89,6 +97,14 @@ class HEPData:
 
         return cent
 
+    @cent.setter
+    def cent(self, value):
+        """
+        Manually set centrality bins.
+
+        """
+        self._cent = value
+
     def y(self, name=None, **quals):
         """
         Get a dependent variable ("y" data) with the given name and qualifiers.
@@ -105,7 +121,7 @@ class HEPData:
             .format(name, quals)
         )
 
-    def dataset(self, name=None, maxcent=80, **quals):
+    def dataset(self, name=None, maxcent=80, ignore_bins=[], **quals):
         """
         Return a dict containing:
 
@@ -120,6 +136,9 @@ class HEPData:
 
         Centrality bins whose upper edge is greater than `maxcent` are skipped.
 
+        Centrality bins in `ignore_bins` [a list of (low, high) tuples] are
+        skipped.
+
         """
         cent = []
         y = []
@@ -128,7 +147,8 @@ class HEPData:
         for c, v in zip(self.cent, self.y(name, **quals)):
             # skip missing values
             # skip bins whose upper edge is greater than maxcent
-            if v['value'] == '-' or c[1] > maxcent:
+            # skip explicitly ignored bins
+            if v['value'] == '-' or c[1] > maxcent or c in ignore_bins:
                 continue
 
             cent.append(c)
@@ -170,6 +190,12 @@ def _data():
     ]:
         data[system]['dNch_deta'] = {None: HEPData(*args).dataset(name)}
 
+    # PbPb2760 transverse energy
+    # ignore bin 0-5 since it's redundant with 0-2.5 and 2.5-5
+    dset = HEPData(1427723, 1).dataset('$E_{T}$', ignore_bins=[(0, 5)])
+    dset['yerr']['sys'] = dset['yerr'].pop('sys,total')
+    data['PbPb2760']['dET_deta'] = {None: dset}
+
     # PbPb2760 identified dN/dy and mean pT
     system = 'PbPb2760'
 
@@ -197,6 +223,25 @@ def _data():
                     for e in dsets[0]['yerr']
                 }
             )
+
+    # PbPb2760 strange baryon yields
+    data['PbPb2760']['dN_dy']['Lambda'] = HEPData(1243863, 23).dataset(
+        RE='PB PB --> LAMBDA X'
+    )
+
+    d = HEPData(1243865, 11)
+    for s in ['Xi', 'Omega']:
+        data[system]['dN_dy'][s] = d.dataset(
+            RE='PB PB --> ({0}- + {0}BAR+) X'.format(s.upper())
+        )
+
+    # PbPb2760 mean pT fluctuations
+    d = HEPData(1307102, 6, reverse=True)
+    name = r'$\sqrt{C_m}/M(p_{\rm T})_m$'
+    # the table only has Npart, but they are actually 5% centrality bins
+    width = 5.
+    d.cent = [(n*width, (n+1)*width) for n, _ in enumerate(d.y(name))]
+    data['PbPb2760']['pT_fluct'] = {None: d.dataset(name)}
 
     # PbPb2760 and PbPb5020 flows
     for system, tables_nk in [

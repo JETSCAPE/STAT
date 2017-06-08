@@ -54,6 +54,7 @@ class Chain:
     # each obs is checked for each system and silently ignored if not found
     observables = [
         ('dNch_deta', [None]),
+        ('dET_deta', [None]),
         ('dN_dy', ['pion', 'kaon', 'proton']),
         ('mean_pT', ['pion', 'kaon', 'proton']),
         ('vnk', [(2, 2), (3, 2), (4, 2)]),

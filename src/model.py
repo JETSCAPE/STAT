@@ -12,6 +12,35 @@ from . import workdir, cachedir, systems, expt
 from .design import Design
 
 
+def pT_fluct(events):
+    """
+    Compute the relative mean pT fluctuation \sqrt{C_m}/M(p_T)_m, defined in
+    Eqs. (2-3) of the ALICE paper https://inspirehep.net/record/1307102.
+
+    """
+    N, sum_pT, sum_pTsq = [
+        events['pT_fluct'][k] for k in
+        ['N', 'sum_pT', 'sum_pTsq']
+    ]
+
+    Npairs = .5*N*(N - 1)
+    M = sum_pT.sum() / N.sum()
+
+    # This is equivalent to the sum over pairs in Eq. (2).  It may be derived
+    # by using that, in general,
+    #
+    #   \sum_{i,j>i} a_i a_j = 1/2 [(\sum_{i} a_i)^2 - \sum_{i} a_i^2].
+    #
+    # That is, the sum over pairs (a_i, a_j) may be re-expressed in terms of
+    # the sum of a_i and sum of squares a_i^2.  Applying this to Eq. (2) and
+    # collecting terms yields the following expression.
+    C = (
+        .5*(sum_pT**2 - sum_pTsq) - M*(N - 1)*sum_pT + M**2*Npairs
+    ).sum() / Npairs.sum()
+
+    return np.sqrt(C)/M
+
+
 # TODO move this symmetric cumulant code to hic
 
 def csq(x):
@@ -116,7 +145,7 @@ class ModelData:
             obs_stack = list(keys)
             obs = obs_stack.pop()
 
-            if obs == 'dNch_deta':
+            if obs in ['dNch_deta', 'dET_deta']:
                 return lambda events: events[obs].mean()
 
             if obs == 'dN_dy':
@@ -129,6 +158,9 @@ class ModelData:
                     events[obs][species],
                     weights=events['dN_dy'][species]
                 )
+
+            if obs == 'pT_fluct':
+                return pT_fluct
 
             if obs.startswith('vnk'):
                 nk = obs_stack.pop()

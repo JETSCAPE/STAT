@@ -190,7 +190,10 @@ def auto_ticks(
 
 
 def _observables_plots():
-    charged_parts = [('dNch_deta', None, r'$N_\mathrm{ch}$', 'Greys')]
+    Nch_ET = [
+        ('dNch_deta', None, r'$N_\mathrm{ch}$', 'Greys'),
+        ('dET_deta', None, r'$E_T$', 'PuRd'),
+    ]
 
     def id_parts(obs):
         return [
@@ -205,8 +208,11 @@ def _observables_plots():
     ]
 
     return [
-        ('Yields', r'$dN_\mathrm{ch}/d\eta,\ dN/dy$', (1., 2e4),
-         charged_parts + id_parts('dN_dy')),
+        ('Yields',  r',\ '.join([
+            r'$dN_\mathrm{ch}/d\eta',
+            r'dN/dy',
+            r'dE_T/d\eta\ [\mathrm{GeV}]$',
+        ]), (1., 1e5), Nch_ET + id_parts('dN_dy')),
         ('Mean $p_T$', r'$p_T$ [GeV]', (0, 2.), id_parts('mean_pT')),
         ('Flow cumulants', r'$v_n\{2\}$', (0, 0.15), flows),
     ]
@@ -232,7 +238,7 @@ def _observables(posterior=False):
             itertools.product(systems, plots), axes.flat
     ):
         for obs, subobs, label, cmap in subplots:
-            factor = 5 if obs == 'dNch_deta' else 1
+            factor = 5**dict(dNch_deta=1, dET_deta=2).get(obs, 0)
             color = getattr(plt.cm, cmap)(.6)
 
             x = model.data[system][obs][subobs]['x']
@@ -287,7 +293,9 @@ def _observables(posterior=False):
                 size=plt.rcParams['axes.titlesize'], rotation=-90
             )
 
-        ax.set_ylabel(ylabel)
+        l = ax.set_ylabel(ylabel)
+        if len(ylabel) > 30:
+            l.set_fontsize(.75*plt.rcParams['axes.labelsize'])
         ax.set_ylim(ylim)
 
     set_tight(fig, w_pad=1, rect=[0, 0, .97, 1])
