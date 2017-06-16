@@ -1,7 +1,6 @@
 """ Latin-hypercube parameter design """
 
 import logging
-import math
 from pathlib import Path
 import re
 import subprocess
@@ -55,7 +54,7 @@ def generate_lhs(npoints, ndim, seed):
 
 
 class Design:
-    def __init__(self, system, npoints=500, seed=751783496):
+    def __init__(self, system, npoints=500, seed=450829120):
         self.system = system
 
         self.projectiles, self.beam_energy = parse_system(system)
@@ -67,26 +66,21 @@ class Design:
             5020: (10., 25.),
         }[self.beam_energy]
 
-        # this label is so much longer than all the others
-        etas_slp_label = r'{atan}(\eta/s {slope}) [{GeV}^{-1}]'
-        # upper bound of atan(slope)
-        pi_2 = math.pi/2
-
         self.keys, labels, self.range = map(list, zip(*[
-            ('norm',          r'{Norm}',                  (norm_range   )),
-            ('trento_p',      r'p',                       ( -0.5,    0.5)),
-            ('fluct_std',     r'\sigma {fluct}',          (  0.0,    2.0)),
-            ('nucleon_width', r'w [{fm}]',                (  0.4,    1.0)),
-            ('dmin3',         r'd_{min}^3 [{fm}^3]',      (  0.0, 1.7**3)),
-            ('tau_fs',        r'\tau {fs} [{fm}/c]',      (  0.0,    1.5)),
-            ('etas_hrg',      r'\eta/s {hrg}',            (  0.1,    0.5)),
-            ('etas_min',      r'\eta/s {min}',            (  0.0,    0.2)),
-            ('etas_slp_atan', etas_slp_label,             (  0.0,   pi_2)),
-            ('etas_crv',      r'\eta/s {crv}',            ( -1.0,    1.0)),
-            ('zetas_max',     r'\zeta/s {max}',           (  0.0,    0.1)),
-            ('zetas_width',   r'\zeta/s {width} [{GeV}]', (  0.0,    0.1)),
-            ('zetas_t0',      r'\zeta/s T_0 [{GeV}]',     (0.150,  0.200)),
-            ('Tswitch',       r'T {switch} [{GeV}]',      (0.135,  0.165)),
+            ('norm',          r'{Norm}',                      (norm_range   )),
+            ('trento_p',      r'p',                           ( -0.5,    0.5)),
+            ('fluct_std',     r'\sigma {fluct}',              (  0.0,    2.0)),
+            ('nucleon_width', r'w [{fm}]',                    (  0.4,    1.0)),
+            ('dmin3',         r'd_{min}^3 [{fm}^3]',          (  0.0, 1.7**3)),
+            ('tau_fs',        r'\tau {fs} [{fm}/c]',          (  0.0,    1.5)),
+            ('etas_hrg',      r'\eta/s {hrg}',                (  0.1,    0.5)),
+            ('etas_min',      r'\eta/s {min}',                (  0.0,    0.2)),
+            ('etas_slope',    r'\eta/s {slope} [{GeV}^{-1}]', (  0.0,    8.0)),
+            ('etas_crv',      r'\eta/s {crv}',                ( -1.0,    1.0)),
+            ('zetas_max',     r'\zeta/s {max}',               (  0.0,    0.1)),
+            ('zetas_width',   r'\zeta/s {width} [{GeV}]',     (  0.0,    0.1)),
+            ('zetas_t0',      r'\zeta/s T_0 [{GeV}]',         (0.150,  0.200)),
+            ('Tswitch',       r'T {switch} [{GeV}]',          (0.135,  0.165)),
         ]))
 
         # convert labels into TeX:
@@ -131,7 +125,7 @@ class Design:
             'hydro-args',
             'etas_hrg={etas_hrg}',
             'etas_min={etas_min}',
-            'etas_slope={etas_slp}',
+            'etas_slope={etas_slope}',
             'etas_curv={etas_crv}',
             'zetas_max={zetas_max}',
             'zetas_width={zetas_width}',
@@ -159,7 +153,6 @@ class Design:
             kwargs.update(
                 fluct=1/kwargs.pop('fluct_std')**2,
                 dmin=kwargs.pop('dmin3')**(1/3),
-                etas_slp=math.tan(kwargs.pop('etas_slp_atan')),
             )
             filepath = outdir / point
             with filepath.open('w') as f:
