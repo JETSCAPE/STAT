@@ -11,7 +11,7 @@ from sklearn.gaussian_process import kernels
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
-from . import cachedir, systems, lazydict, model
+from . import cachedir, lazydict, model
 from .design import Design
 
 
@@ -31,8 +31,11 @@ class Emulator:
         ('vnk', [(2, 2), (3, 2), (4, 2)]),
     ]
 
-    def __init__(self, system, npc=8, nrestarts=10):
-        logging.info('training emulator for system %s', system)
+    def __init__(self, system, npc=8, nrestarts=0):
+        logging.info(
+            'training emulator for system %s (%d PC, %d restarts)',
+            system, npc, nrestarts
+        )
 
         arrays = []
         self._slices = {}
@@ -77,7 +80,7 @@ class Emulator:
         ]
 
     @classmethod
-    def from_cache(cls, system, **kwargs):
+    def from_cache(cls, system, retrain=False, **kwargs):
         """
         Load from the cache if available, otherwise create and cache a new
         instance.
@@ -88,7 +91,7 @@ class Emulator:
         # cache the __dict__ rather than the Emulator instance itself
         # this way the __name__ doesn't matter, e.g. a pickled
         # __main__.Emulator can be unpickled as a src.emulator.Emulator
-        if cachefile.exists():
+        if not retrain and cachefile.exists():
             logging.debug('loading emulator for system %s from cache', system)
             emu = cls.__new__(cls)
             emu.__dict__ = joblib.load(cachefile)
@@ -154,8 +157,43 @@ emulators = lazydict(Emulator.from_cache)
 
 
 if __name__ == '__main__':
-    for s in systems:
-        emu = emulators[s]
+    import argparse
+    from . import systems
+
+    def arg_to_system(arg):
+        if arg not in systems:
+            raise argparse.ArgumentTypeError(arg)
+        return arg
+
+    parser = argparse.ArgumentParser(
+        description='train emulators for each collision system',
+        argument_default=argparse.SUPPRESS
+    )
+
+    parser.add_argument(
+        '--npc', type=int,
+        help='number of principal components'
+    )
+    parser.add_argument(
+        '--nrestarts', type=int,
+        help='number of optimizer restarts'
+    )
+
+    parser.add_argument(
+        '--retrain', action='store_true',
+        help='retrain even if emulator is cached'
+    )
+    parser.add_argument(
+        'systems', nargs='*', type=arg_to_system,
+        default=systems, metavar='SYSTEM',
+        help='system(s) to train'
+    )
+
+    args = parser.parse_args()
+    kwargs = vars(args)
+
+    for s in kwargs.pop('systems'):
+        emu = Emulator.from_cache(s, **kwargs)
 
         print(s)
         print('{} PCs explain {:.5f} of variance'.format(
