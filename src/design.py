@@ -100,7 +100,16 @@ class Design:
         fmt = '{:0' + str(len(str(npoints - 1))) + 'd}'
         self.points = [fmt.format(i) for i in range(npoints)]
 
-        self.array = self.min + (self.max - self.min)*generate_lhs(
+        # TODO improve this
+        lhsmin = self.min.copy()
+        for k, m in [
+                ('fluct_std', 1e-3),
+                ('tau_fs', 1e-3),
+                ('zetas_width', 1e-4),
+        ]:
+            lhsmin[self.keys.index(k)] = m
+
+        self.array = lhsmin + (self.max - lhsmin)*generate_lhs(
             npoints=npoints, ndim=len(self.keys), seed=seed
         )
 
