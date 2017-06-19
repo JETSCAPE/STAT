@@ -87,6 +87,7 @@ plt.rcParams.update({
     'legend.numpoints': 1,
     'legend.scatterpoints': 1,
     'legend.frameon': False,
+    'image.cmap': 'Blues',
     'image.interpolation': 'none',
     'pdf.fonttype': 42
 })
@@ -416,7 +417,11 @@ def format_ci(samples, ci=.9):
     ])
 
 
-def _posterior(params=None, ignore=None, scale=1, padr=.99, padt=.98):
+def _posterior(
+        params=None, ignore=None,
+        scale=1, padr=.99, padt=.98,
+        cmap=None
+):
     """
     Triangle plot of posterior marginal and joint distributions.
 
@@ -438,7 +443,9 @@ def _posterior(params=None, ignore=None, scale=1, padr=.99, padt=.98):
 
     data = chain.load(*keys).T
 
-    cmap = plt.cm.Blues
+    cmap = plt.get_cmap(cmap)
+    cmap.set_bad('white')
+
     line_color = cmap(.8)
     fill_color = cmap(.5, alpha=.1)
 
