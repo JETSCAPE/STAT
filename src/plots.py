@@ -76,6 +76,8 @@ plt.rcParams.update({
     'ytick.minor.size': .8,
     'xtick.major.pad': 1.5,
     'ytick.major.pad': 1.5,
+    'axes.spines.top': False,
+    'axes.spines.right': False,
     'axes.labelpad': 3,
     'text.color': offblack,
     'axes.edgecolor': offblack,
@@ -108,9 +110,6 @@ def plot(f):
 
         fig = plt.gcf()
 
-        if getattr(fig, 'despine', True):
-            despine(*fig.axes)
-
         if not fig.get_tight_layout():
             set_tight(fig)
 
@@ -122,23 +121,6 @@ def plot(f):
     plot_functions[f.__name__] = wrapper
 
     return wrapper
-
-
-def despine(*axes):
-    """
-    Remove the top and right spines.
-
-    """
-    if not axes:
-        axes = plt.gcf().axes
-
-    for ax in axes:
-        for spine in ['top', 'right']:
-            ax.spines[spine].set_visible(False)
-        for xy, pos in [('x', 'bottom'), ('y', 'left')]:
-            axis = getattr(ax, xy + 'axis')
-            if axis.get_ticks_position() == 'default':
-                axis.set_ticks_position(pos)
 
 
 def set_tight(fig=None, **kwargs):
