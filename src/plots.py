@@ -22,6 +22,7 @@ from sklearn.mixture import GaussianMixture
 
 from . import workdir, systems, parse_system, expt, model, mcmc
 from .design import Design
+from .emulator import emulators
 
 
 def darken(rgba, amount=.5):
@@ -1173,6 +1174,91 @@ def trento_events():
     axes[1].set_ylabel('$y$ [fm]')
 
     set_tight(fig, h_pad=.5)
+
+
+default_system = 'PbPb2760'
+
+
+@plot
+def diag_pca(system=default_system):
+    """
+    Diagnostic: histograms of principal components and scatterplots of pairs.
+
+    """
+    Y = [g.y_train_ for g in emulators[system].gps]
+    n = len(Y)
+    ymax = np.ceil(max(np.fabs(y).max() for y in Y))
+    lim = (-ymax, ymax)
+
+    fig, axes = plt.subplots(nrows=n, ncols=n, figsize=2*(n,))
+
+    for y, ax in zip(Y, axes.diagonal()):
+        ax.hist(y, bins=30)
+        ax.set_xlim(lim)
+
+    for ny, nx in zip(*np.tril_indices_from(axes, k=-1)):
+        ax = axes[ny][nx]
+        ax.scatter(Y[nx], Y[ny])
+        ax.set_xlim(lim)
+        ax.set_ylim(lim)
+        axes[nx][ny].set_axis_off()
+
+    for i in range(n):
+        label = 'PC {}'.format(i)
+        axes[-1][i].set_xlabel(label)
+        axes[i][0].set_ylabel(label)
+
+
+@plot
+def diag_emu(system=default_system):
+    """
+    Diagnostic: plots of each principal component vs each input parameter,
+    overlaid by emulator predictions at several points in design space.
+
+    """
+    gps = emulators[system].gps
+    nrows = len(gps)
+    ncols = gps[0].X_train_.shape[1]
+
+    w = 1.8
+    fig, axes = plt.subplots(
+        nrows=nrows, ncols=ncols,
+        figsize=(ncols*w, .8*nrows*w)
+    )
+
+    ymax = np.ceil(max(np.fabs(g.y_train_).max() for g in gps))
+    ylim = (-ymax, ymax)
+
+    design = Design(system)
+
+    for ny, (gp, row) in enumerate(zip(gps, axes)):
+        y = gp.y_train_
+
+        for nx, (x, label, xlim, ax) in enumerate(zip(
+                gp.X_train_.T, design.labels, design.range, row
+        )):
+            ax.plot(x, y, 'o', ms=.8, color='.75', zorder=10)
+
+            x = np.linspace(xlim[0], xlim[1], 100)
+            X = np.empty((x.size, ncols))
+
+            for k, r in enumerate([.2, .5, .8]):
+                X[:] = r*design.min + (1 - r)*design.max
+                X[:, nx] = x
+                mean, std = gp.predict(X, return_std=True)
+
+                color = plt.cm.tab10(k)
+                ax.plot(x, mean, lw=.2, color=color, zorder=30)
+                ax.fill_between(
+                    x, mean - std, mean + std,
+                    lw=0, color=color, alpha=.3, zorder=20
+                )
+
+            ax.set_xlim(xlim)
+            ax.set_ylim(ylim)
+
+            ax.set_xlabel(label)
+            ax.set_ylabel('PC {}'.format(ny))
 
 
 if __name__ == '__main__':
