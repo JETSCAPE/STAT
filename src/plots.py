@@ -479,13 +479,11 @@ def _posterior(
         )
 
     for ny, nx in zip(*np.tril_indices_from(axes, k=-1)):
-        H, xedges, yedges = np.histogram2d(
+        axes[ny][nx].hist2d(
             data[nx], data[ny], bins=100,
-            range=(ranges[nx], ranges[ny])
+            range=(ranges[nx], ranges[ny]),
+            cmap=cmap, cmin=1
         )
-        H[H == 0] = None
-        axes[ny][nx].pcolorfast(xedges, yedges, H.T, cmap=cmap)
-
         axes[nx][ny].set_axis_off()
 
     for n, label in enumerate(labels):
