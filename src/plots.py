@@ -76,6 +76,7 @@ plt.rcParams.update({
     'ytick.minor.size': .8,
     'xtick.major.pad': 1.5,
     'ytick.major.pad': 1.5,
+    'axes.formatter.limits': (-5, 5),
     'axes.spines.top': False,
     'axes.spines.right': False,
     'axes.labelpad': 3,
@@ -865,7 +866,6 @@ def flow_corr():
         ax.set_ylim(-ylim, ylim)
 
         auto_ticks(ax, 'y', nbins=6, minor=2)
-        ax.ticklabel_format(scilimits=(-5, 5))
 
         if ax.is_first_col():
             ax.set_ylabel(label('m', 'n'))
