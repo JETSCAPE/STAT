@@ -60,15 +60,7 @@ class Chain:
         ('vnk', [(2, 2), (3, 2), (4, 2)]),
     ]
 
-    def __init__(
-            self, model_staterr_frac=.05,
-            path=workdir / 'mcmc' / 'chain.hdf'
-    ):
-        # extra fractional error to add to the experimental uncertainty
-        # accounts for model stat fluctuations and predictive uncertainty
-        # TODO improve this
-        self.model_staterr_frac = model_staterr_frac
-
+    def __init__(self, path=workdir / 'mcmc' / 'chain.hdf'):
         self.path = path
         self.path.parent.mkdir(exist_ok=True)
 
@@ -163,19 +155,25 @@ class Chain:
         the last point, otherwise burn-in and start the chain.
 
         """
-        # compute inverse covariance matrices for each experimental dataset
+        # compute inverse covariance matrices for each dataset
         if self.cov_inv is None:
-            self.cov_inv = {
-                sys: {
-                    obs: {
+            self.cov_inv = {}
+            for sys, sysdata in expt.data.items():
+                self.cov_inv[sys] = {}
+                emu_var = emulators[sys].var()
+                for obs, subobslist in self.observables:
+                    try:
+                        obsdata = sysdata[obs]
+                    except KeyError:
+                        continue
+
+                    self.cov_inv[sys][obs] = {
                         subobs: np.linalg.inv(
-                            expt.cov(**dset) +
-                            np.diag((self.model_staterr_frac*dset['y'])**2)
+                            expt.cov(**obsdata[subobs]) +
+                            np.diag(emu_var[obs][subobs])
                         )
-                        for subobs, dset in obsdata.items()
-                    } for obs, obsdata in sysdata.items()
-                } for sys, sysdata in expt.data.items()
-            }
+                        for subobs in subobslist
+                    }
 
         with self.open('a') as f:
             try:
