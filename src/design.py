@@ -94,6 +94,7 @@ class Design:
             for i in labels
         ]
 
+        self.ndim = len(self.range)
         self.min, self.max = map(np.array, zip(*self.range))
 
         # use padded numbers for design point names
@@ -110,7 +111,7 @@ class Design:
             lhsmin[self.keys.index(k)] = m
 
         self.array = lhsmin + (self.max - lhsmin)*generate_lhs(
-            npoints=npoints, ndim=len(self.keys), seed=seed
+            npoints=npoints, ndim=self.ndim, seed=seed
         )
 
     def __array__(self):
