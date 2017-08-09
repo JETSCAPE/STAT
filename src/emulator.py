@@ -15,6 +15,25 @@ from . import cachedir, lazydict, model
 from .design import Design
 
 
+class _Covariance:
+    """
+    Proxy object to extract observable sub-blocks from a covariance array.
+    Returned by Emulator.predict().
+
+    """
+    def __init__(self, array, slices):
+        self.array = array
+        self._slices = slices
+
+    def __getitem__(self, key):
+        (obs1, subobs1), (obs2, subobs2) = key
+        return self.array[
+            ...,
+            self._slices[obs1][subobs1],
+            self._slices[obs2][subobs2]
+        ]
+
+
 class Emulator:
     """
     Multidimensional Gaussian process emulator using principal component
@@ -53,6 +72,10 @@ class Emulator:
         # StandardScaler with_mean is unnecessary since PCA removes the mean
         self.scaler = StandardScaler(with_mean=False, copy=False)
         self.pca = PCA(npc, copy=False, whiten=True, svd_solver='full')
+        # XXX Although a pipeline is used here for convenience, the scaler and
+        # pca objects are accessed directly when inverse transforming
+        # predictive covariances.  If the pipeline is modified, self.predict()
+        # must be updated accordingly.
         self.pipeline = make_pipeline(self.scaler, self.pca)
 
         Z = self.pipeline.fit_transform(np.concatenate(arrays, axis=1))
@@ -117,21 +140,103 @@ class Emulator:
             } for obs, slices in self._slices.items()
         }
 
-    def predict(self, X):
+    def predict(self, X, return_cov=False):
         """
-        Predict mean model output at X.
+        Predict model output at X.
 
-        Returns a nested dict of observable arrays, each with shape
-        (n_samples_X, n_cent_bins).
+        X must be a 2D array-like with shape (nsamples, ndim).  It is passed
+        directly to sklearn GaussianProcessRegressor.predict().
+
+        If return_cov is true, return a tuple (mean, cov), otherwise only
+        return the mean.
+
+        The mean is returned as a nested dict of observable arrays, each with
+        shape (nsamples, n_cent_bins).
+
+        The covariance is returned as a proxy object which extracts observable
+        sub-blocks using a dict-like interface:
+
+        >>> mean, cov = emulator.predict(X, return_cov=True)
+
+        >>> mean['dN_dy']['pion']
+        <mean prediction of pion dN/dy>
+
+        >>> cov[('dN_dy', 'pion'), ('dN_dy', 'pion')]
+        <covariance matrix of pion dN/dy>
+
+        >>> cov[('dN_dy', 'pion'), ('mean_pT', 'kaon')]
+        <covariance matrix between pion dN/dy and kaon mean pT>
+
+        The shape of the extracted covariance blocks are
+        (nsamples, n_cent_bins_1, n_cent_bins_2).
+
+        NB: the covariance is only computed between observables and centrality
+        bins, not between sample points.
 
         """
-        return self._results_dict(
+        gp_mean = [gp.predict(X, return_cov=return_cov) for gp in self.gps]
+
+        if return_cov:
+            gp_mean, gp_cov = zip(*gp_mean)
+
+        # inverse transform the predictive mean
+        mean = self._results_dict(
             self.pipeline.inverse_transform(
                 np.concatenate([
-                    gp.predict(X)[:, np.newaxis] for gp in self.gps
+                    m[:, np.newaxis] for m in gp_mean
                 ], axis=1)
             )
         )
+
+        if return_cov:
+            # Now transform the predictive variance in PC space to physical
+            # space.  Assuming the PCs are uncorrelated, the transformation is
+            #
+            #   cov_ij = sum_k A_ik var_k A_jk
+            #
+            # where A is the PC transformation matrix and var_k is the
+            # variance of the kth PC.
+            # https://en.wikipedia.org/wiki/Propagation_of_uncertainty
+
+            # In the einsum calls below, explicitly disable optimization (which
+            # attempts to find the fastest computational path) because the path
+            # is already optimized "by hand".
+
+            # Create the linear transformation matrix.
+            # shape: (npc, nobs)
+            A = np.einsum(
+                'ij,i,j->ij',
+                self.pca.components_,
+                np.sqrt(self.pca.explained_variance_),
+                self.scaler.scale_,
+                optimize=False
+            )
+
+            # At this point, the transformation can be accomplished by
+            #
+            #   einsum('ki,ka,kj->aij', A, gp_var, A)
+            #
+            # however it's faster to first expand the ij indices and then sum
+            # over k using a dot product.
+
+            # Perform the first part of the transformation.
+            # shape: (npc, nobs, nobs)
+            A = np.einsum('ki,kj->kij', A, A, optimize=False)
+
+            # Build array of the GP predictive variances at each sample point.
+            # shape: (nsamples, npc)
+            gp_var = np.concatenate([
+                c.diagonal()[:, np.newaxis] for c in gp_cov
+            ], axis=1)
+
+            # Compute the covariance at each sample point.
+            # (Reshaping A to a 2D array allows np.dot to use BLAS.)
+            npc, nobs = self.pca.components_.shape
+            cov = np.dot(gp_var, A.reshape(npc, -1)).reshape(-1, nobs, nobs)
+
+            return mean, _Covariance(cov, self._slices)
+        else:
+            return mean
 
     def var(self):
         """
