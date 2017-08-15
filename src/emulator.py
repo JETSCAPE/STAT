@@ -234,6 +234,11 @@ class Emulator:
             npc, nobs = self.pca.components_.shape
             cov = np.dot(gp_var, A.reshape(npc, -1)).reshape(-1, nobs, nobs)
 
+            # Add the PCA noise variance (i.e. truncation error) to the
+            # diagonals.
+            i = np.arange(nobs)
+            cov[:, i, i] += self.pca.noise_variance_ * self.scaler.var_
+
             return mean, _Covariance(cov, self._slices)
         else:
             return mean
