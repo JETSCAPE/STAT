@@ -7,10 +7,56 @@ import logging
 import emcee
 import h5py
 import numpy as np
+from scipy.linalg import lapack
 
 from . import workdir, systems, expt
 from .design import Design
 from .emulator import emulators
+
+
+def mvn_loglike(y, cov):
+    """
+    Evaluate the multivariate-normal log-likelihood for difference vector `y`
+    and covariance matrix `cov`:
+
+        log_p = -1/2*[(y^T).(C^-1).y + log(det(C))] + const.
+
+    The likelihood is NOT NORMALIZED, since this does not affect MCMC.  The
+    normalization const = -n/2*log(2*pi), where n is the dimensionality.
+
+    Arguments `y` and `cov` MUST be np.arrays with dtype == float64 and shapes
+    (n) and (n, n), respectively.  These requirements are NOT CHECKED.
+
+    The calculation follows algorithm 2.1 in Rasmussen and Williams (Gaussian
+    Processes for Machine Learning).
+
+    """
+    # Compute the Cholesky decomposition of the covariance.
+    # Use bare LAPACK function to avoid scipy.linalg wrapper overhead.
+    L, info = lapack.dpotrf(cov, clean=False)
+
+    if info < 0:
+        raise ValueError(
+            'lapack dpotrf error: '
+            'the {}-th argument had an illegal value'.format(-info)
+        )
+    elif info < 0:
+        raise np.linalg.LinAlgError(
+            'lapack dpotrf error: '
+            'the leading minor of order {} is not positive definite'
+            .format(info)
+        )
+
+    # Solve for alpha = cov^-1.y using the Cholesky decomp.
+    alpha, info = lapack.dpotrs(L, y)
+
+    if info != 0:
+        raise ValueError(
+            'lapack dpotrs error: '
+            'the {}-th argument had an illegal value'.format(-info)
+        )
+
+    return -.5*np.dot(y, alpha) - np.log(L.diagonal()).sum()
 
 
 class LoggingEnsembleSampler(emcee.EnsembleSampler):
@@ -85,17 +131,60 @@ class Chain:
         self.ndim = len(self.range)
         self.min, self.max = map(np.array, zip(*self.range))
 
-        self.common_indices = list(range(len(systems), self.ndim))
+        self._common_indices = list(range(len(systems), self.ndim))
 
-        self.cov_inv = None
+        self._slices = {}
+        self._expt_y = {}
+        self._expt_cov = {}
 
-    def _predict(self, X):
+        # pre-compute the experimental data vectors and covariance matrices
+        for sys, sysdata in expt.data.items():
+            nobs = 0
+
+            self._slices[sys] = []
+
+            for obs, subobslist in self.observables:
+                try:
+                    obsdata = sysdata[obs]
+                except KeyError:
+                    continue
+
+                for subobs in subobslist:
+                    try:
+                        dset = obsdata[subobs]
+                    except KeyError:
+                        continue
+
+                    n = dset['y'].size
+                    self._slices[sys].append(
+                        (obs, subobs, slice(nobs, nobs + n))
+                    )
+                    nobs += n
+
+            self._expt_y[sys] = np.empty(nobs)
+            self._expt_cov[sys] = np.empty((nobs, nobs))
+
+            for obs1, subobs1, slc1 in self._slices[sys]:
+                self._expt_y[sys][slc1] = expt.data[sys][obs1][subobs1]['y']
+                for obs2, subobs2, slc2 in self._slices[sys]:
+                    if (obs1, subobs1, slc1) == (obs2, subobs2, slc2):
+                        self._expt_cov[sys][slc1, slc2] = expt.cov(
+                            **expt.data[sys][obs1][subobs1]
+                        )
+                    else:
+                        # TODO off-diagonal blocks
+                        self._expt_cov[sys][slc1, slc2] = 0
+
+    def _predict(self, X, **kwargs):
         """
         Call each system emulator to predict model output at X.
 
         """
         return {
-            sys: emulators[sys].predict(X[:, [n] + self.common_indices])
+            sys: emulators[sys].predict(
+                X[:, [n] + self._common_indices],
+                **kwargs
+            )
             for n, sys in enumerate(systems)
         }
 
@@ -111,25 +200,34 @@ class Chain:
         inside = np.all((X > self.min) & (X < self.max), axis=1)
         lp[~inside] = -np.inf
 
-        if inside.any():
-            Y = self._predict(X[inside])
+        nsamples = np.count_nonzero(inside)
 
-            for sys, sysdata in expt.data.items():
-                for obs, subobslist in self.observables:
-                    try:
-                        obsdata = sysdata[obs]
-                    except KeyError:
-                        continue
+        if nsamples > 0:
+            pred = self._predict(X[inside], return_cov=True)
 
-                    for subobs in subobslist:
-                        dY = Y[sys][obs][subobs] - obsdata[subobs]['y']
-                        lp[inside] += np.einsum(
-                            'ij,ki,kj->k',
-                            self.cov_inv[sys][obs][subobs],
-                            dY, dY
-                        )
+            for sys in systems:
+                nobs = self._expt_y[sys].size
+                # allocate difference (model - expt) and covariance arrays
+                dY = np.empty((nsamples, nobs))
+                cov = np.empty((nsamples, nobs, nobs))
 
-            lp[inside] *= -.5
+                model_Y, model_cov = pred[sys]
+
+                # copy predictive mean and covariance into allocated arrays
+                for obs1, subobs1, slc1 in self._slices[sys]:
+                    dY[:, slc1] = model_Y[obs1][subobs1]
+                    for obs2, subobs2, slc2 in self._slices[sys]:
+                        cov[:, slc1, slc2] = \
+                            model_cov[(obs1, subobs1), (obs2, subobs2)]
+
+                # subtract expt data from model data
+                dY -= self._expt_y[sys]
+
+                # add expt cov to model cov
+                cov += self._expt_cov[sys]
+
+                # compute log likelihood at each point
+                lp[inside] += list(map(mvn_loglike, dY, cov))
 
         return lp
 
@@ -155,26 +253,6 @@ class Chain:
         the last point, otherwise burn-in and start the chain.
 
         """
-        # compute inverse covariance matrices for each dataset
-        if self.cov_inv is None:
-            self.cov_inv = {}
-            for sys, sysdata in expt.data.items():
-                self.cov_inv[sys] = {}
-                emu_var = emulators[sys].var()
-                for obs, subobslist in self.observables:
-                    try:
-                        obsdata = sysdata[obs]
-                    except KeyError:
-                        continue
-
-                    self.cov_inv[sys][obs] = {
-                        subobs: np.linalg.inv(
-                            expt.cov(**obsdata[subobs]) +
-                            np.diag(emu_var[obs][subobs])
-                        )
-                        for subobs in subobslist
-                    }
-
         with self.open('a') as f:
             try:
                 dset = f['chain']

@@ -243,28 +243,6 @@ class Emulator:
         else:
             return mean
 
-    def var(self):
-        """
-        Compute the predictive variance.
-
-        Returns a nested dict of the variance for each observable.
-
-        The variance is computed by transforming the GP noise terms into
-        physical space and taking the diagonal components; this is a good
-        estimate except near the edges of the design space.
-
-        """
-        # TODO this is a rudimentary implementation, to be improved
-        return self._results_dict(
-            np.einsum(
-                'ij,ij,i,i,j->j',
-                self.pca.components_, self.pca.components_,
-                self.pca.explained_variance_,
-                [gp.kernel_.k2.noise_level for gp in self.gps],
-                self.scaler.var_
-            )
-        )
-
     def sample_y(self, X, n_samples=1, random_state=None):
         """
         Sample model output at X.
