@@ -167,13 +167,9 @@ class Chain:
             for obs1, subobs1, slc1 in self._slices[sys]:
                 self._expt_y[sys][slc1] = expt.data[sys][obs1][subobs1]['y']
                 for obs2, subobs2, slc2 in self._slices[sys]:
-                    if (obs1, subobs1, slc1) == (obs2, subobs2, slc2):
-                        self._expt_cov[sys][slc1, slc2] = expt.cov(
-                            **expt.data[sys][obs1][subobs1]
-                        )
-                    else:
-                        # TODO off-diagonal blocks
-                        self._expt_cov[sys][slc1, slc2] = 0
+                    self._expt_cov[sys][slc1, slc2] = expt.cov(
+                        sys, obs1, subobs1, obs2, subobs2
+                    )
 
     def _predict(self, X, **kwargs):
         """
