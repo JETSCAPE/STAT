@@ -199,6 +199,8 @@ def _observables_plots():
             r'dE_T/d\eta\ [\mathrm{GeV}]$',
         ]), (1., 1e5), Nch_ET + id_parts('dN_dy')),
         ('Mean $p_T$', r'$p_T$ [GeV]', (0, 2.), id_parts('mean_pT')),
+        ('Mean $p_T$ fluctuations', r'$\delta p_T/\langle p_T \rangle$',
+         (0, .05), [('pT_fluct', None, '', 'Greys')]),
         ('Flow cumulants', r'$v_n\{2\}$', (0, 0.15), flows),
     ]
 
@@ -213,7 +215,7 @@ def _observables(posterior=False):
 
     fig, axes = plt.subplots(
         nrows=len(systems), ncols=len(plots),
-        figsize=(fullwidth, .55*fullwidth)
+        figsize=(1.3*fullwidth, .55*fullwidth)
     )
 
     if posterior:
@@ -279,7 +281,7 @@ def _observables(posterior=False):
             )
 
         l = ax.set_ylabel(ylabel)
-        if len(ylabel) > 30:
+        if len(ylabel) > 40:
             l.set_fontsize(.75*plt.rcParams['axes.labelsize'])
         ax.set_ylim(ylim)
 

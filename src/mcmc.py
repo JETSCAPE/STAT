@@ -103,6 +103,7 @@ class Chain:
         ('dET_deta', [None]),
         ('dN_dy', ['pion', 'kaon', 'proton']),
         ('mean_pT', ['pion', 'kaon', 'proton']),
+        ('pT_fluct', [None]),
         ('vnk', [(2, 2), (3, 2), (4, 2)]),
     ]
 
