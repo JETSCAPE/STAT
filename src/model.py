@@ -189,19 +189,21 @@ class ModelData:
         )
 
 
-def _training_data(system):
+def _data(system, validation=False):
     """
-    Compute training data (model observables at all design points) for the
-    given system.
+    Compute training or validation data (model observables at all design
+    points) for the given system.
 
     """
+    design = Design(system, validation=validation)
+
     # expected filenames for each design point
     files = [
-        Path(workdir, 'model_output', 'main', system, '{}.dat'.format(p))
-        for p in Design(system).points
+        Path(workdir, 'model_output', design.type, system, '{}.dat'.format(p))
+        for p in design.points
     ]
 
-    cachefile = Path(cachedir, 'model', '{}.pkl'.format(system))
+    cachefile = Path(cachedir, 'model', design.type, '{}.pkl'.format(system))
 
     if cachefile.exists():
         # use the cache unless any of the model data files are newer
@@ -217,7 +219,10 @@ def _training_data(system):
     else:
         logging.debug('cache file %s does not exist', cachefile)
 
-    logging.info('loading %s training data and computing observables', system)
+    logging.info(
+        'loading %s/%s data and computing observables',
+        system, design.type
+    )
 
     data = expt.data[system]
 
@@ -239,7 +244,8 @@ def _training_data(system):
     return data
 
 
-data = lazydict(_training_data)
+data = lazydict(_data)
+validation_data = lazydict(_data, validation=True)
 
 
 if __name__ == '__main__':

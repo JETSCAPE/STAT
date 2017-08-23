@@ -35,9 +35,11 @@ class lazydict(dict):
     A dict that populates itself on demand by calling a unary function.
 
     """
-    def __init__(self, function):
+    def __init__(self, function, *args, **kwargs):
         self.function = function
+        self.args = args
+        self.kwargs = kwargs
 
     def __missing__(self, key):
-        self[key] = value = self.function(key)
+        self[key] = value = self.function(key, *self.args, **self.kwargs)
         return value

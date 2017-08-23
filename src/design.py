@@ -1,5 +1,6 @@
 """ Latin-hypercube parameter design """
 
+import itertools
 import logging
 from pathlib import Path
 import re
@@ -54,10 +55,10 @@ def generate_lhs(npoints, ndim, seed):
 
 
 class Design:
-    def __init__(self, system, npoints=500, seed=450829120):
+    def __init__(self, system, npoints=500, validation=False, seed=None):
         self.system = system
-
         self.projectiles, self.beam_energy = parse_system(system)
+        self.type = 'validation' if validation else 'main'
 
         # 5.02 TeV has ~1.2x particle production as 2.76 TeV
         # [https://inspirehep.net/record/1410589]
@@ -103,16 +104,36 @@ class Design:
 
         # TODO improve this
         lhsmin = self.min.copy()
-        for k, m in [
-                ('fluct_std', 1e-3),
-                ('tau_fs', 1e-3),
-                ('zetas_width', 1e-4),
-        ]:
-            lhsmin[self.keys.index(k)] = m
+        if not validation:
+            for k, m in [
+                    ('fluct_std', 1e-3),
+                    ('tau_fs', 1e-3),
+                    ('zetas_width', 1e-4),
+            ]:
+                lhsmin[self.keys.index(k)] = m
+
+        if seed is None:
+            seed = 751783496 if validation else 450829120
 
         self.array = lhsmin + (self.max - lhsmin)*generate_lhs(
             npoints=npoints, ndim=self.ndim, seed=seed
         )
+
+        if validation:
+            # Transform etas_slope from arctan space and remove points outside
+            # the design range.
+            slope_idx = self.keys.index('etas_slope')
+            slope_max = self.max[slope_idx]
+            self.array[:, slope_idx] = \
+                np.tan(np.pi/2/slope_max*self.array[:, slope_idx])
+            keep = self.array[:, slope_idx] <= slope_max
+            self.array = self.array[keep]
+            self.points = list(itertools.compress(self.points, keep))
+            logging.debug(
+                'removed validation points with etas_slope > %s '
+                '(%d points remaining)',
+                slope_max, len(self.points)
+            )
 
     def __array__(self):
         return self.array
@@ -146,7 +167,7 @@ class Design:
     )
 
     def write_files(self, basedir):
-        outdir = basedir / self.system
+        outdir = basedir / self.type / self.system
         outdir.mkdir(parents=True, exist_ok=True)
 
         for point, row in zip(self.points, self.array):
@@ -181,8 +202,8 @@ def main():
     )
     args = parser.parse_args()
 
-    for s in systems:
-        Design(s).write_files(args.inputs_dir)
+    for system, validation in itertools.product(systems, [False, True]):
+        Design(system, validation=validation).write_files(args.inputs_dir)
 
     logging.info('wrote all files to %s', args.inputs_dir)
 
