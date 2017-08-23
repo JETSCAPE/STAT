@@ -315,6 +315,6 @@ if __name__ == '__main__':
                 emu.pca.explained_variance_ratio_, emu.gps
         )):
             print(
-                'GP {}: {:.5f} of variance, kernel: {}'
-                .format(n, evr, gp.kernel_)
+                'GP {}: {:.5f} of variance, LML = {:.5g}, kernel: {}'
+                .format(n, evr, gp.log_marginal_likelihood_value_, gp.kernel_)
             )
