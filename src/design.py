@@ -55,6 +55,39 @@ def generate_lhs(npoints, ndim, seed):
 
 
 class Design:
+    """
+    Latin-hypercube model design.
+
+    Creates a design for the given system with the given number of points.
+    Creates the main (training) design if `validation` is false (default);
+    creates the validation design if `validation` is true.  If `seed` is not
+    given, a default random seed is used (different defaults for the main and
+    validation designs).
+
+    Public attributes:
+
+        system: the system string
+        projectiles, beam energy: system projectile pair and beam energy
+        type: 'main' or 'validation'
+        keys: list of parameter keys
+        labels: list of parameter display labels (for TeX / matplotlib)
+        range: list of parameter (min, max) tuples
+        min, max: np.arrays of parameter min and max
+        ndim: number of parameters (i.e. dimensions)
+        points: list of design point names (formatted numbers)
+        array: the actual design array
+
+    The class also implicitly converts to np.array.
+
+    Public methods:
+
+        write_files: creates input files for running events
+
+    This is probably the worst class in this project, and certainly the least
+    generic.  It will probably need to be heavily edited for use in any other
+    project, if not completely rewritten.
+
+    """
     def __init__(self, system, npoints=500, validation=False, seed=None):
         self.system = system
         self.projectiles, self.beam_energy = parse_system(system)
@@ -102,7 +135,26 @@ class Design:
         fmt = '{:0' + str(len(str(npoints - 1))) + 'd}'
         self.points = [fmt.format(i) for i in range(npoints)]
 
-        # TODO improve this
+        # XXX OK, what the heck is going on here?
+        #
+        # The original design transformed etas_slope to arctangent space, i.e.,
+        # atan(slope) was sampled uniformly in (0, pi/2).  This was intended to
+        # help place an upper bound on the slope, but it backfired, instead
+        # making it almost impossible to train the GPs, since the model changed
+        # so rapidly as atan(slope) approach pi/2.  It also turned out that
+        # slope >~ 8 is clearly excluded, since this suppresses flow far too
+        # much, regardless of the other parameters.
+        #
+        # As a result, I decided to re-run with the slope uniform in (0, 8),
+        # and use the old design for validation.
+
+        # While working with the original design data, I noticed that very
+        # small tau_fs values were problematic, presumably due to numerical
+        # issues (dividing by a small number, large initial energy densities,
+        # etc).  I also realized that similar things could happen for other
+        # parameters.  Thus, for the new design, I have set small but nonzero
+        # minima for several parameters (and the emulators can extrapolate to
+        # zero).
         lhsmin = self.min.copy()
         if not validation:
             for k, m in [
@@ -121,7 +173,7 @@ class Design:
 
         if validation:
             # Transform etas_slope from arctan space and remove points outside
-            # the design range.
+            # the design range (see above).
             slope_idx = self.keys.index('etas_slope')
             slope_max = self.max[slope_idx]
             self.array[:, slope_idx] = \
@@ -167,6 +219,10 @@ class Design:
     )
 
     def write_files(self, basedir):
+        """
+        Write input files for each design point to `basedir`.
+
+        """
         outdir = basedir / self.type / self.system
         outdir.mkdir(parents=True, exist_ok=True)
 
