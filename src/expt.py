@@ -199,9 +199,9 @@ def _data():
     # PbPb2760 identified dN/dy and mean pT
     system = 'PbPb2760'
 
-    for obs, table, combine_func in [
-            ('dN_dy', 31, np.sum),
-            ('mean_pT', 32, np.mean),
+    for obs, table, combine_func, maxcent in [
+            ('dN_dy', 31, np.sum, 80),
+            ('mean_pT', 32, np.mean, 70),
     ]:
         data[system][obs] = {}
         d = HEPData(1222333, table)
@@ -211,7 +211,7 @@ def _data():
             ('proton', ['P', 'PBAR']),
         ]:
             dsets = [
-                d.dataset(RE='PB PB --> {} X'.format(i))
+                d.dataset(RE='PB PB --> {} X'.format(i), maxcent=maxcent)
                 for i in re_products
             ]
 
@@ -241,7 +241,7 @@ def _data():
     # the table only has Npart, but they are actually 5% centrality bins
     width = 5.
     d.cent = [(n*width, (n+1)*width) for n, _ in enumerate(d.y(name))]
-    data['PbPb2760']['pT_fluct'] = {None: d.dataset(name)}
+    data['PbPb2760']['pT_fluct'] = {None: d.dataset(name, maxcent=60)}
 
     # PbPb2760 and PbPb5020 flows
     for system, tables_nk in [
@@ -262,7 +262,8 @@ def _data():
                 data[system]['vnk'][n, k] = d.dataset(
                     'V{}{{{}{}}}'.format(
                         n, k, ', |DELTAETA|>1' if k == 2 else ''
-                    )
+                    ),
+                    maxcent=(70 if n == 2 else 50)
                 )
 
     # PbPb2760 central flows vn{2}
