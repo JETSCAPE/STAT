@@ -275,16 +275,36 @@ class Chain:
             )
 
             if burn:
-                logging.info('no existing chain found, burning in')
-                X0 = sampler.run_mcmc(
+                logging.info(
+                    'no existing chain found, starting initial burn-in')
+                # Run first half of burn-in starting from random positions.
+                nburn0 = nburnsteps // 2
+                sampler.run_mcmc(
                     self.random_pos(nwalkers),
-                    nburnsteps,
+                    nburn0,
+                    status=status
+                )
+                logging.info('resampling walker positions')
+                # Reposition walkers to the most likely points in the chain,
+                # then run the second half of burn-in.  This significantly
+                # accelerates burn-in and helps prevent stuck walkers.
+                X0 = sampler.flatchain[
+                    np.unique(
+                        sampler.flatlnprobability,
+                        return_index=True
+                    )[1][-nwalkers:]
+                ]
+                sampler.reset()
+                X0 = sampler.run_mcmc(
+                    X0,
+                    nburnsteps - nburn0,
                     status=status,
                     storechain=False
                 )[0]
                 sampler.reset()
+                logging.info('burn-in complete, starting production')
             else:
-                logging.info('starting from last point of existing chain')
+                logging.info('restarting from last point of existing chain')
                 X0 = dset[:, -1, :]
 
             sampler.run_mcmc(X0, nsteps, status=status)
