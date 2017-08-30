@@ -171,6 +171,21 @@ class Design:
             npoints=npoints, ndim=self.ndim, seed=seed
         )
 
+        # As it turns out, the minimum for tau_fs (above) was not high
+        # enough.  For reasons I don't quite understand, including low
+        # tau_fs points in the design messes with GP training, leading to
+        # bad predictions (with a smaller length scale, larger noise term,
+        # and lower marginal likelihood).
+        #
+        # I chose this new minimum value by excluding points until GP
+        # training stabilized.  This doesn't really matter because tau_fs
+        # smaller than this is extremely unlikely.
+        #
+        # Future projects like this should definitely NOT reuse this code --
+        # just set good parameter ranges to begin with!
+        tau_fs_min = .03
+        tau_fs_idx = self.keys.index('tau_fs')
+
         if validation:
             # Transform etas_slope from arctan space and remove points outside
             # the design range (see above).
@@ -178,13 +193,39 @@ class Design:
             slope_max = self.max[slope_idx]
             self.array[:, slope_idx] = \
                 np.tan(np.pi/2/slope_max*self.array[:, slope_idx])
-            keep = self.array[:, slope_idx] <= slope_max
+            keep = (
+                (self.array[:, tau_fs_idx] >= tau_fs_min) &
+                (self.array[:, slope_idx] <= slope_max)
+            )
             self.array = self.array[keep]
             self.points = list(itertools.compress(self.points, keep))
             logging.debug(
-                'removed validation points with etas_slope > %s '
-                '(%d points remaining)',
-                slope_max, len(self.points)
+                'removed validation points with tau_fs < %s and '
+                'etas_slope > %s (%d points remaining)',
+                tau_fs_min, slope_max, len(self.points)
+            )
+        else:
+            # Resample ONLY the points with tau_fs below the minimum, leaving
+            # other parameters unchanged.  Sample one new tau_fs value in each
+            # equal subdivision of the new range (Latin sample).
+            resample = self.array[:, tau_fs_idx] < tau_fs_min
+            nresample = np.count_nonzero(resample)
+            array_rs = self.array[resample]
+            bins = np.linspace(
+                tau_fs_min, self.max[tau_fs_idx],
+                nresample + 1
+            )
+            array_rs[:, tau_fs_idx] = \
+                np.random.RandomState(2603139165).uniform(bins[:-1], bins[1:])
+            # Move the resampled points to the end of the design.
+            self.array = np.concatenate([self.array[~resample], array_rs])
+            self.points = (
+                list(itertools.compress(self.points, ~resample)) +
+                [fmt.format(n) for n in range(npoints, npoints + nresample)]
+            )
+            logging.debug(
+                'resampled points %s which had tau_fs < %s',
+                resample.nonzero()[0].tolist(), tau_fs_min
             )
 
     def __array__(self):
