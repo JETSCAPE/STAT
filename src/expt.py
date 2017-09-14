@@ -121,7 +121,7 @@ class HEPData:
             .format(name, quals)
         )
 
-    def dataset(self, name=None, maxcent=80, ignore_bins=[], **quals):
+    def dataset(self, name=None, maxcent=70, ignore_bins=[], **quals):
         """
         Return a dict containing:
 
@@ -199,9 +199,9 @@ def _data():
     # PbPb2760 identified dN/dy and mean pT
     system = 'PbPb2760'
 
-    for obs, table, combine_func, maxcent in [
-            ('dN_dy', 31, np.sum, 80),
-            ('mean_pT', 32, np.mean, 70),
+    for obs, table, combine_func in [
+            ('dN_dy', 31, np.sum),
+            ('mean_pT', 32, np.mean),
     ]:
         data[system][obs] = {}
         d = HEPData(1222333, table)
@@ -211,7 +211,7 @@ def _data():
             ('proton', ['P', 'PBAR']),
         ]:
             dsets = [
-                d.dataset(RE='PB PB --> {} X'.format(i), maxcent=maxcent)
+                d.dataset(RE='PB PB --> {} X'.format(i))
                 for i in re_products
             ]
 
