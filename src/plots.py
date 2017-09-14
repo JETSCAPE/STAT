@@ -1243,6 +1243,248 @@ def trento_events():
     set_tight(fig, h_pad=.5)
 
 
+def boxplot(
+        ax, percentiles, x=0, y=0, box_width=1, line_width=1,
+        color=(0, 0, 0), alpha=.6, zorder=10
+):
+    """
+    Draw a minimal boxplot.
+
+    `percentiles` must be a np.array of five numbers:
+
+        whisker_low, quartile_1, median, quartile_3, whisker_high
+
+    """
+    pl, q1, q2, q3, ph = percentiles + y
+
+    # IQR box
+    ax.add_patch(patches.Rectangle(
+        xy=(x - .5*box_width, q1),
+        width=box_width, height=(q3 - q1),
+        color=color, alpha=alpha, lw=0, zorder=zorder
+    ))
+
+    # median line
+    ax.plot(
+        [x - .5*box_width, x + .5*box_width], 2*[q2],
+        lw=line_width, solid_capstyle='butt', color=color,
+        zorder=zorder + 1
+    )
+
+    # whisker lines
+    for y in [[q1, pl], [q3, ph]]:
+        ax.plot(
+            2*[x], y, lw=line_width, solid_capstyle='butt',
+            color=color, alpha=alpha, zorder=zorder
+        )
+
+
+@plot
+def validation_all(system='PbPb2760'):
+    """
+    Emulator validation: normalized residuals and RMS error for each
+    observable.
+
+    """
+    fig, (ax_box, ax_rms) = plt.subplots(
+        nrows=2, figsize=(10, 4),
+        gridspec_kw=dict(height_ratios=[1.5, 1])
+    )
+
+    index = 1
+    ticks = []
+    ticklabels = []
+
+    vdata = model.validation_data[system]
+    emu = emulators[system]
+    mean, cov = emu.predict(
+        Design(system, validation=True).array,
+        return_cov=True
+    )
+
+    def label(obs, subobs):
+        if obs.startswith('d') and obs.endswith('_deta'):
+            return r'$d{}/d\eta$'.format(
+                {'Nch': r'N_\mathrm{ch}', 'ET': r'E_T'}[obs[1:-5]])
+
+        id_parts_labels = {'dN_dy': 'dN/dy', 'mean_pT': r'\langle p_T \rangle'}
+        if obs in id_parts_labels:
+            return '${}\ {}$'.format(
+                id_parts_labels[obs],
+                {'pion': '\pi', 'kaon': 'K', 'proton': 'p'}[subobs]
+            )
+
+        if obs == 'pT_fluct':
+            return r'$\delta p_T/\langle p_T \rangle$'
+
+        if obs == 'vnk':
+            return r'$v_{}\{{{}\}}$'.format(*subobs)
+
+    for obs, subobslist in emu.observables:
+        for subobs in subobslist:
+            color = obs_color(obs, subobs)
+
+            Y = vdata[obs][subobs]['Y']
+            Y_ = mean[obs][subobs]
+            S_ = np.sqrt(cov[(obs, subobs), (obs, subobs)].T.diagonal())
+
+            Z = (Y_ - Y)/S_
+
+            for i, percentiles in enumerate(
+                    np.percentile(Z, [10, 25, 50, 75, 90], axis=0).T,
+                    start=index
+            ):
+                boxplot(ax_box, percentiles, x=i, box_width=.75, color=color)
+
+            rms = 100*np.sqrt(np.square(Y_/Y - 1).mean(axis=0))
+            ax_rms.plot(
+                np.arange(index, index + rms.size), rms, 'o', color=color
+            )
+
+            ticks.append(.5*(index + i))
+            ticklabels.append(label(obs, subobs))
+
+            index = i + 2
+
+    ax_box.set_xticks(ticks)
+    ax_box.set_xticklabels(ticklabels)
+    ax_box.tick_params('x', bottom=False, labelsize=plt.rcParams['font.size'])
+
+    ax_box.set_ylim(-2.5, 2.5)
+    ax_box.set_ylabel(r'Normalized residuals')
+
+    q, p = np.sqrt(2) * special.erfinv(2*np.array([.75, .90]) - 1)
+    ax_box.axhspan(-q, q, color='.85', zorder=-20)
+    for s in [-1, 0, 1]:
+        ax_box.axhline(s*p, color='.5', zorder=-10)
+
+    ax_q = ax_box.twinx()
+    ax_q.set_ylim(ax_box.get_ylim())
+    ax_q.set_yticks([-p, -q, 0, q, p])
+    ax_q.set_yticklabels([10, 25, 50, 75, 90])
+    ax_q.tick_params('y', right=False)
+    ax_q.set_ylabel(
+        'Normal quantiles',
+        fontdict=dict(rotation=-90),
+        labelpad=3*plt.rcParams['axes.labelpad']
+    )
+
+    ax_rms.set_xticks([])
+    ax_rms.set_yticks(np.arange(0, 16, 5))
+    ax_rms.set_ylim(0, 15)
+    ax_rms.set_ylabel('RMS % error')
+
+    for y in ax_rms.get_yticks():
+        ax_rms.axhline(y, color='.5', zorder=-10)
+
+    for ax in fig.axes:
+        ax.set_xlim(0, index - 1)
+        ax.spines['bottom'].set_visible(False)
+
+
+@plot
+def validation_example(
+        system='PbPb2760',
+        obs='dNch_deta', subobs=None,
+        label=r'$dN_\mathrm{ch}/d\eta$',
+        cent=(20, 30)
+):
+    """
+    Example of emulator validation for a single observable.  Scatterplot of
+    model calculations vs emulator predictions with histogram and boxplot of
+    normalized residuals.
+
+    """
+    fig, axes = plt.subplots(
+        ncols=2, figsize=(4., 2.5),
+        gridspec_kw=dict(width_ratios=[3, 1])
+    )
+
+    ax_scatter, ax_hist = axes
+
+    vdata = model.validation_data[system][obs][subobs]
+    cent_slc = (slice(None), vdata['cent'].index(cent))
+    y = vdata['Y'][cent_slc]
+
+    mean, cov = emulators[system].predict(
+        Design(system, validation=True).array,
+        return_cov=True
+    )
+    y_ = mean[obs][subobs][cent_slc]
+    std_ = np.sqrt(cov[(obs, subobs), (obs, subobs)].T.diagonal()[cent_slc])
+
+    color = obs_color(obs, subobs)
+    alpha = .6
+
+    ax_scatter.set_aspect('equal')
+    ax_scatter.errorbar(
+        y_, y, xerr=std_,
+        fmt='o', ms=2.5, mew=.1, mec='white',
+        color=color, alpha=alpha
+    )
+    dy = .03*y.ptp()
+    x = [y.min() - dy, y.max() + dy]
+    ax_scatter.plot(x, x, color='.4')
+    ax_scatter.set_xlabel('Emulator prediction')
+    ax_scatter.set_ylabel('Model calculation')
+    ax_scatter.text(
+        .04, .96, '{} {}–{}%'.format(label, *cent),
+        horizontalalignment='left', verticalalignment='top',
+        transform=ax_scatter.transAxes
+    )
+
+    zmax = 3.5
+    zrange = (-zmax, zmax)
+
+    z = (y_ - y)/std_
+
+    ax_hist.hist(
+        z, bins=30, range=zrange, normed=True,
+        orientation='horizontal', color=color, alpha=alpha
+    )
+    x = np.linspace(-zmax, zmax, 1000)
+    ax_hist.plot(np.exp(-.5*x*x)/np.sqrt(2*np.pi), x, color='.25')
+
+    box_x = .75
+    box_width = .1
+
+    boxplot(
+        ax_hist, np.percentile(z, [10, 25, 50, 75, 90]),
+        x=box_x, box_width=box_width, color=color, alpha=alpha
+    )
+
+    guide_width = 2.5*box_width
+
+    q, p = np.sqrt(2) * special.erfinv(2*np.array([.75, .90]) - 1)
+    ax_hist.add_patch(patches.Rectangle(
+        xy=(box_x - .5*guide_width, -q),
+        width=guide_width, height=2*q,
+        color='.85', zorder=-20
+    ))
+    for s in [-1, 0, 1]:
+        ax_hist.plot(
+            [box_x - .5*guide_width, box_x + .5*guide_width], 2*[s*p],
+            color='.5', zorder=-10
+        )
+
+    ax_hist.set_ylim(zrange)
+    ax_hist.spines['bottom'].set_visible(False)
+    ax_hist.tick_params('x', bottom=False, labelbottom=False)
+    ax_hist.set_ylabel('Normalized residuals')
+
+    ax_q = ax_hist.twinx()
+    ax_q.spines['bottom'].set_visible(False)
+    ax_q.set_ylim(ax_hist.get_ylim())
+    ax_q.set_yticks([-p, -q, 0, q, p])
+    ax_q.set_yticklabels([10, 25, 50, 75, 90])
+    ax_q.tick_params('y', right=False)
+    ax_q.set_ylabel(
+        'Normal quantiles',
+        fontdict=dict(rotation=-90),
+        labelpad=3*plt.rcParams['axes.labelpad']
+    )
+
+
 default_system = 'PbPb2760'
 
 
