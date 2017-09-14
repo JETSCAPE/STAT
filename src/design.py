@@ -197,6 +197,11 @@ class Design:
                 (self.array[:, tau_fs_idx] >= tau_fs_min) &
                 (self.array[:, slope_idx] <= slope_max)
             )
+            # Remove outlier point.  Probably caused by bug in hydro code
+            # related to very low eta/s min ~ 2e-6.  Despite having the lowest
+            # eta/s min in the design, this point had very low flow and
+            # anomalous energy / particle production.
+            keep[281] = False
             self.array = self.array[keep]
             self.points = list(itertools.compress(self.points, keep))
             logging.debug(
