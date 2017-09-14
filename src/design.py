@@ -105,7 +105,7 @@ class Design:
             ('trento_p',      r'p',                           ( -0.5,    0.5)),
             ('fluct_std',     r'\sigma {fluct}',              (  0.0,    2.0)),
             ('nucleon_width', r'w [{fm}]',                    (  0.4,    1.0)),
-            ('dmin3',         r'd_{min}^3 [{fm}^3]',          (  0.0, 1.7**3)),
+            ('dmin3',         r'd {min} [{fm}]',              (  0.0, 1.7**3)),
             ('tau_fs',        r'\tau {fs} [{fm}/c]',          (  0.0,    1.5)),
             ('etas_hrg',      r'\eta/s {hrg}',                (  0.1,    0.5)),
             ('etas_min',      r'\eta/s {min}',                (  0.0,    0.2)),
