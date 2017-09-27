@@ -8,7 +8,6 @@ from sklearn.decomposition import PCA
 from sklearn.externals import joblib
 from sklearn.gaussian_process import GaussianProcessRegressor as GPR
 from sklearn.gaussian_process import kernels
-from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 from . import cachedir, lazydict, model
@@ -39,6 +38,18 @@ class Emulator:
     Multidimensional Gaussian process emulator using principal component
     analysis.
 
+    The model training data are standardized (subtract mean and scale to unit
+    variance), then transformed through PCA.  The first `npc` principal
+    components (PCs) are emulated by independent Gaussian processes (GPs).  The
+    remaining components are neglected, which is equivalent to assuming they
+    are standard zero-mean unit-variance GPs.
+
+    This class has become a bit messy but it still does the job.  It would
+    probably be better to refactor some of the data transformations /
+    preprocessing into modular classes, to be used with an sklearn pipeline.
+    The classes would also need to handle transforming uncertainties, which
+    could be tricky.
+
     """
     # observables to emulate
     # list of 2-tuples: (obs, [list of subobs])
@@ -57,30 +68,32 @@ class Emulator:
             system, npc, nrestarts
         )
 
-        arrays = []
+        Y = []
         self._slices = {}
 
-        index = 0
+        # Build an array of all observables to emulate.
+        nobs = 0
         for obs, subobslist in self.observables:
             self._slices[obs] = {}
             for subobs in subobslist:
-                Y = model.data[system][obs][subobs]['Y']
-                arrays.append(Y)
-                n = Y.shape[1]
-                self._slices[obs][subobs] = slice(index, index + n)
-                index += n
+                Y.append(model.data[system][obs][subobs]['Y'])
+                n = Y[-1].shape[1]
+                self._slices[obs][subobs] = slice(nobs, nobs + n)
+                nobs += n
 
-        # StandardScaler with_mean is unnecessary since PCA removes the mean
-        self.scaler = StandardScaler(with_mean=False, copy=False)
-        self.pca = PCA(npc, copy=False, whiten=True, svd_solver='full')
-        # XXX Although a pipeline is used here for convenience, the scaler and
-        # pca objects are accessed directly when inverse transforming
-        # predictive covariances.  If the pipeline is modified, self.predict()
-        # must be updated accordingly.
-        self.pipeline = make_pipeline(self.scaler, self.pca)
+        Y = np.concatenate(Y, axis=1)
 
-        Z = self.pipeline.fit_transform(np.concatenate(arrays, axis=1))
+        self.npc = npc
+        self.nobs = nobs
+        self.scaler = StandardScaler(copy=False)
+        self.pca = PCA(copy=False, whiten=True, svd_solver='full')
 
+        # Standardize observables and transform through PCA.  Use the first
+        # `npc` components but save the full PC transformation for later.
+        Z = self.pca.fit_transform(self.scaler.fit_transform(Y))[:, :npc]
+
+        # Define kernel (covariance function):
+        # Gaussian correlation (RBF) plus a noise term.
         design = Design(system)
         ptp = design.max - design.min
         kernel = (
@@ -89,11 +102,12 @@ class Emulator:
                 length_scale_bounds=np.outer(ptp, (.1, 10))
             ) +
             kernels.WhiteKernel(
-                noise_level=.01,
-                noise_level_bounds=(1e-8, 10)
+                noise_level=.1**2,
+                noise_level_bounds=(.01**2, 1)
             )
         )
 
+        # Fit a GP (optimize the kernel hyperparameters) to each PC.
         self.gps = [
             GPR(
                 kernel=kernel, alpha=0,
@@ -102,6 +116,40 @@ class Emulator:
             ).fit(design, z)
             for z in Z.T
         ]
+
+        # Construct the full linear transformation matrix, which is just the PC
+        # matrix with the first axis multiplied by the explained standard
+        # deviation of each PC and the second axis multiplied by the
+        # standardization scale factor of each observable.
+        self._trans_matrix = (
+            self.pca.components_
+            * np.sqrt(self.pca.explained_variance_[:, np.newaxis])
+            * self.scaler.scale_
+        )
+
+        # Pre-calculate some arrays for inverse transforming the predictive
+        # variance (from PC space to physical space).
+
+        # Assuming the PCs are uncorrelated, the transformation is
+        #
+        #   cov_ij = sum_k A_ki var_k A_kj
+        #
+        # where A is the trans matrix and var_k is the variance of the kth PC.
+        # https://en.wikipedia.org/wiki/Propagation_of_uncertainty
+
+        # Compute the partial transformation for the first `npc` components
+        # that are actually emulated.
+        A = self._trans_matrix[:npc]
+        self._var_trans = np.einsum(
+            'ki,kj->kij', A, A, optimize=False).reshape(npc, nobs**2)
+
+        # Compute the covariance matrix for the remaining neglected PCs
+        # (truncation error).  These components always have variance == 1.
+        B = self._trans_matrix[npc:]
+        self._cov_trunc = np.dot(B.T, B)
+
+        # Add small term to diagonal for numerical stability.
+        self._cov_trunc.flat[::nobs + 1] += 1e-4 * self.scaler.var_
 
     @classmethod
     def from_cache(cls, system, retrain=False, **kwargs):
@@ -129,11 +177,18 @@ class Emulator:
 
         return emu
 
-    def _results_dict(self, Y):
+    def _inverse_transform(self, Z):
         """
-        Unpack an array of predictions into a nested dict of observables.
+        Inverse transform principal components to observables.
+
+        Returns a nested dict of arrays.
 
         """
+        # Z shape (..., npc)
+        # Y shape (..., nobs)
+        Y = np.dot(Z, self._trans_matrix[:Z.shape[-1]])
+        Y += self.scaler.mean_
+
         return {
             obs: {
                 subobs: Y[..., s]
@@ -180,65 +235,23 @@ class Emulator:
         if return_cov:
             gp_mean, gp_cov = zip(*gp_mean)
 
-        # inverse transform the predictive mean
-        mean = self._results_dict(
-            self.pipeline.inverse_transform(
-                np.concatenate([
-                    m[:, np.newaxis] for m in gp_mean
-                ], axis=1)
-            )
+        mean = self._inverse_transform(
+            np.concatenate([m[:, np.newaxis] for m in gp_mean], axis=1)
         )
 
         if return_cov:
-            # Now transform the predictive variance in PC space to physical
-            # space.  Assuming the PCs are uncorrelated, the transformation is
-            #
-            #   cov_ij = sum_k A_ik var_k A_jk
-            #
-            # where A is the PC transformation matrix and var_k is the
-            # variance of the kth PC.
-            # https://en.wikipedia.org/wiki/Propagation_of_uncertainty
-
-            # In the einsum calls below, explicitly disable optimization (which
-            # attempts to find the fastest computational path) because the path
-            # is already optimized "by hand".
-
-            # Create the linear transformation matrix.
-            # shape: (npc, nobs)
-            A = np.einsum(
-                'ij,i,j->ij',
-                self.pca.components_,
-                np.sqrt(self.pca.explained_variance_),
-                self.scaler.scale_,
-                optimize=False
-            )
-
-            # At this point, the transformation can be accomplished by
-            #
-            #   einsum('ki,ka,kj->aij', A, gp_var, A)
-            #
-            # however it's faster to first expand the ij indices and then sum
-            # over k using a dot product.
-
-            # Perform the first part of the transformation.
-            # shape: (npc, nobs, nobs)
-            A = np.einsum('ki,kj->kij', A, A, optimize=False)
-
             # Build array of the GP predictive variances at each sample point.
             # shape: (nsamples, npc)
             gp_var = np.concatenate([
                 c.diagonal()[:, np.newaxis] for c in gp_cov
             ], axis=1)
 
-            # Compute the covariance at each sample point.
-            # (Reshaping A to a 2D array allows np.dot to use BLAS.)
-            npc, nobs = self.pca.components_.shape
-            cov = np.dot(gp_var, A.reshape(npc, -1)).reshape(-1, nobs, nobs)
-
-            # Add the PCA noise variance (i.e. truncation error) to the
-            # diagonals.
-            i = np.arange(nobs)
-            cov[:, i, i] += self.pca.noise_variance_ * self.scaler.var_
+            # Compute the covariance at each sample point using the
+            # pre-calculated arrays (see constructor).
+            cov = np.dot(gp_var, self._var_trans).reshape(
+                X.shape[0], self.nobs, self.nobs
+            )
+            cov += self._cov_trunc
 
             return mean, _Covariance(cov, self._slices)
         else:
@@ -252,15 +265,19 @@ class Emulator:
         (n_samples_X, n_samples, n_cent_bins).
 
         """
-        return self._results_dict(
-            self.pipeline.inverse_transform(
-                np.concatenate([
-                    gp.sample_y(
-                        X, n_samples=n_samples, random_state=random_state
-                    ).reshape(-1, 1)
-                    for gp in self.gps
-                ], axis=1)
-            ).reshape(X.shape[0], n_samples, -1)
+        # Sample the GP for each emulated PC.  The remaining components are
+        # assumed to have a standard normal distribution.
+        return self._inverse_transform(
+            np.concatenate([
+                gp.sample_y(
+                    X, n_samples=n_samples, random_state=random_state
+                )[:, :, np.newaxis]
+                for gp in self.gps
+            ] + [
+                np.random.standard_normal(
+                    (X.shape[0], n_samples, self.pca.n_components_ - self.npc)
+                )
+            ], axis=2)
         )
 
 
@@ -308,8 +325,8 @@ if __name__ == '__main__':
 
         print(s)
         print('{} PCs explain {:.5f} of variance'.format(
-            emu.pca.n_components_,
-            emu.pca.explained_variance_ratio_.sum()
+            emu.npc,
+            emu.pca.explained_variance_ratio_[:emu.npc].sum()
         ))
 
         for n, (evr, gp) in enumerate(zip(
