@@ -111,6 +111,10 @@ class Chain:
         self.path = path
         self.path.parent.mkdir(exist_ok=True)
 
+        # parameter order:
+        #  - normalizations (one for each system)
+        #  - all other physical parameters (same for all systems)
+        #  - model sys error
         def keys_labels_range():
             for sys in systems:
                 d = Design(sys)
@@ -125,6 +129,8 @@ class Chain:
 
             yield from klr
 
+            yield 'model_sys_err', r'$\sigma\ \mathrm{model\ sys}$', (0., .4)
+
         self.keys, self.labels, self.range = map(
             list, zip(*keys_labels_range())
         )
@@ -132,7 +138,7 @@ class Chain:
         self.ndim = len(self.range)
         self.min, self.max = map(np.array, zip(*self.range))
 
-        self._common_indices = list(range(len(systems), self.ndim))
+        self._common_indices = list(range(len(systems), self.ndim - 1))
 
         self._slices = {}
         self._expt_y = {}
@@ -185,9 +191,14 @@ class Chain:
             for n, sys in enumerate(systems)
         }
 
-    def log_posterior(self, X):
+    def log_posterior(self, X, extra_std_prior_scale=.05):
         """
         Evaluate the posterior at X.
+
+        extra_std_prior_scale is the scale parameter for the prior distribution
+        on the model sys error parameter:
+
+            prior ~ sigma^2 * exp(-sigma/scale)
 
         """
         X = np.array(X, copy=False, ndmin=2)
@@ -200,7 +211,10 @@ class Chain:
         nsamples = np.count_nonzero(inside)
 
         if nsamples > 0:
-            pred = self._predict(X[inside], return_cov=True)
+            extra_std = X[inside, -1]
+            pred = self._predict(
+                X[inside], return_cov=True, extra_std=extra_std
+            )
 
             for sys in systems:
                 nobs = self._expt_y[sys].size
@@ -225,6 +239,9 @@ class Chain:
 
                 # compute log likelihood at each point
                 lp[inside] += list(map(mvn_loglike, dY, cov))
+
+            # add prior for extra_std (model sys error)
+            lp[inside] += 2*np.log(extra_std) - extra_std/extra_std_prior_scale
 
         return lp
 
