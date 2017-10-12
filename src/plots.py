@@ -463,6 +463,154 @@ def observables_map():
     set_tight(fig, w_pad=1, rect=[0, 0, .97, 1])
 
 
+@plot
+def find_map():
+    """
+    Find the maximum a posteriori (MAP) point and compare emulator predictions
+    to experimental data.
+
+    """
+    from scipy.optimize import minimize
+
+    chain = mcmc.Chain()
+
+    fixed_params = {
+        'trento_p': 0.,
+        'etas_min': .08,
+        'etas_hrg': .3,
+        'model_sys_err': .1,
+    }
+
+    opt_params = [k for k in chain.keys if k not in fixed_params]
+
+    def full_x(x):
+        x = dict(zip(opt_params, x), **fixed_params)
+        return [x[k] for k in chain.keys]
+
+    res = minimize(
+        lambda x: -chain.log_posterior(full_x(x))[0],
+        x0=np.median(chain.load(*opt_params, thin=1000), axis=0),
+        tol=1e-8,
+        bounds=[
+            (a + 1e-6*(b - a), b - 1e-6*(b - a))
+            for (a, b), k in zip(chain.range, chain.keys)
+            if k in opt_params
+        ]
+    )
+
+    logging.debug('optimization result:\n%s', res)
+    width = max(map(len, chain.keys)) + 2
+    logging.info(
+        'MAP params:\n%s',
+        '\n'.join(
+            k.ljust(width) + str(x) for k, x in zip(chain.keys, full_x(res.x))
+        )
+    )
+
+    pred = chain._predict(np.atleast_2d(full_x(res.x)))
+
+    plots = _observables_plots()
+
+    fig, axes = plt.subplots(
+        nrows=2*len(plots), ncols=len(systems),
+        figsize=(.8*fullwidth, 1.4*fullwidth),
+        gridspec_kw=dict(
+            height_ratios=list(itertools.chain.from_iterable(
+                (p.get('height_ratio', 1), .4) for p in plots
+            ))
+        )
+    )
+
+    for (plot, system), ax, ratio_ax in zip(
+            itertools.product(plots, systems), axes[::2].flat, axes[1::2].flat
+    ):
+        for obs, subobs, opts in plot['subplots']:
+            color = obs_color(obs, subobs)
+            scale = opts.get('scale')
+
+            x = model.data[system][obs][subobs]['x']
+            y = pred[system][obs][subobs][0]
+
+            if scale is not None:
+                y = y*scale
+
+            ax.plot(x, y, color=color)
+
+            if 'label' in opts:
+                ax.text(
+                    x[-1] + 3, y[-1],
+                    opts['label'],
+                    color=darken(color), ha='left', va='center'
+                )
+
+            try:
+                dset = expt.data[system][obs][subobs]
+            except KeyError:
+                continue
+
+            x = dset['x']
+            yexp = dset['y']
+            yerr = dset['yerr']
+            yerrstat = yerr.get('stat')
+            yerrsys = yerr.get('sys', yerr.get('sum'))
+
+            if scale is not None:
+                yexp = yexp*scale
+                if yerrstat is not None:
+                    yerrstat = yerrstat*scale
+                if yerrsys is not None:
+                    yerrsys = yerrsys*scale
+
+            ax.errorbar(
+                x, yexp, yerr=yerrstat, fmt='o', ms=1.7,
+                capsize=0, color='.25', zorder=1000
+            )
+
+            ax.fill_between(
+                x, yexp - yerrsys, yexp + yerrsys,
+                color='.9', zorder=-10
+            )
+
+            ratio_ax.plot(x, y/yexp, color=color)
+
+        if plot.get('yscale') == 'log':
+            ax.set_yscale('log')
+            ax.minorticks_off()
+        else:
+            auto_ticks(ax, 'y', nbins=4, minor=2)
+
+        for a in [ax, ratio_ax]:
+            a.set_xlim(0, 80)
+            auto_ticks(a, 'x', nbins=5, minor=2)
+
+        ax.set_xticklabels([])
+
+        ax.set_ylim(plot['ylim'])
+
+        if ax.is_first_row():
+            ax.set_title(format_system(system))
+        elif ax.is_last_row():
+            ax.set_xlabel('Centrality %')
+
+        if ax.is_first_col():
+            ax.set_ylabel(plot['ylabel'])
+
+        if ax.is_last_col():
+            ax.text(
+                1.02, .5, plot['title'],
+                transform=ax.transAxes, ha='left', va='center',
+                size=plt.rcParams['axes.labelsize'], rotation=-90
+            )
+
+        ratio_ax.axhline(1, lw=.5, color='0.5', zorder=-100)
+        ratio_ax.axhspan(0.9, 1.1, color='0.95', zorder=-200)
+        ratio_ax.set_ylim(0.8, 1.2)
+        ratio_ax.set_yticks(np.arange(80, 121, 20)/100)
+        ratio_ax.set_ylabel('Ratio')
+
+    set_tight(fig, rect=[0, 0, .97, 1])
+
+
 def format_ci(samples, ci=.9):
     """
     Compute the median and a credible interval for an array of samples and
