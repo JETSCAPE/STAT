@@ -189,21 +189,31 @@ class ModelData:
         )
 
 
-def _data(system, validation=False):
+def _data(system, dataset='main'):
     """
-    Compute training or validation data (model observables at all design
-    points) for the given system.
+    Compute model observables for the given system and dataset.
+
+    dataset may be one of:
+
+        - 'main' (training design)
+        - 'validation' (validation design)
+        - 'map' (maximum a posteriori, i.e. "best-fit" point)
 
     """
-    design = Design(system, validation=validation)
+    if dataset not in {'main', 'validation', 'map'}:
+        raise ValueError('invalid dataset: {}'.format(dataset))
 
-    # expected filenames for each design point
-    files = [
-        Path(workdir, 'model_output', design.type, system, '{}.dat'.format(p))
-        for p in design.points
-    ]
+    files = (
+        [Path(workdir, 'model_output', dataset, '{}.dat'.format(system))]
+        if dataset == 'map' else
+        [
+            Path(workdir, 'model_output', dataset, system, '{}.dat'.format(p))
+            for p in
+            Design(system, validation=(dataset == 'validation')).points
+        ]
+    )
 
-    cachefile = Path(cachedir, 'model', design.type, '{}.pkl'.format(system))
+    cachefile = Path(cachedir, 'model', dataset, '{}.pkl'.format(system))
 
     if cachefile.exists():
         # use the cache unless any of the model data files are newer
@@ -221,7 +231,7 @@ def _data(system, validation=False):
 
     logging.info(
         'loading %s/%s data and computing observables',
-        system, design.type
+        system, dataset
     )
 
     data = expt.data[system]
@@ -244,8 +254,9 @@ def _data(system, validation=False):
     return data
 
 
-data = lazydict(_data)
-validation_data = lazydict(_data, validation=True)
+data = lazydict(_data, 'main')
+validation_data = lazydict(_data, 'validation')
+map_data = lazydict(_data, 'map')
 
 
 if __name__ == '__main__':
