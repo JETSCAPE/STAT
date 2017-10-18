@@ -199,10 +199,11 @@ def obs_color_hsluv(obs, subobs):
 
     if obs == 'vnk':
         return {
-            2: (230, 90, 65),
-            3: (150, 90, 67),
-            4: (310, 70, 50),
-        }[subobs[0]]
+            (2, 2): (230, 90, 65),
+            (2, 4): (262, 80, 63),
+            (3, 2): (150, 90, 67),
+            (4, 2): (310, 70, 50),
+        }[subobs]
 
     raise ValueError('unknown observable: {} {}'.format(obs, subobs))
 
@@ -379,30 +380,71 @@ def observables_map():
     """
     plots = _observables_plots()
 
-    fig = plt.figure(figsize=(fullwidth, .85*fullheight))
-    gs = plt.GridSpec(3*len(systems), len(plots))
+    ylim = {
+        'Yields': (2, 1e5),
+        'Flow cumulants': (0, .15),
+        'Mean $p_T$': (0, 1.7),
+        'Mean $p_T$ fluctuations': (0, .045),
+    }
 
-    for (nsys, system), (nplot, (title, ylabel, ylim, subplots)) in \
-            itertools.product(enumerate(systems), enumerate(plots)):
-        nrow = 3*nsys
-        ax = fig.add_subplot(gs[nrow:nrow+2, nplot])
-        ratio_ax = fig.add_subplot(gs[nrow+2, nplot])
+    for n, p in enumerate(plots):
+        p['ylim'] = ylim[p['title']]
+        if p['title'] == 'Flow cumulants':
+            move_index = n
+            p.update(
+                ylabel=r'$v_n\{k\}$',
+                subplots=[
+                    ('vnk', nk, dict(label='$v_{}\{{{}\}}$'.format(*nk)))
+                    for nk in [(2, 2), (2, 4), (3, 2), (4, 2)]
+                ],
+                legend=True
+            )
 
-        for obs, subobs, label, cmap in subplots:
-            factor = 5 if obs == 'dNch_deta' else 1
-            color = getattr(plt.cm, cmap)(.6)
+    plots.insert(1, plots.pop(move_index))
+
+    ncols = int(len(plots)/2)
+
+    fig, axes = plt.subplots(
+        nrows=4, ncols=ncols,
+        figsize=(.8*fullwidth, .4*ncols*fullwidth),
+        gridspec_kw=dict(
+            height_ratios=list(itertools.chain.from_iterable(
+                (p.get('height_ratio', 1), .4) for p in plots[::ncols]
+            ))
+        )
+    )
+
+    labels = {}
+    handles = dict(expt={}, model={})
+
+    for plot, ax, ratio_ax in zip(plots, axes[::2].flat, axes[1::2].flat):
+        for system, (obs, subobs, opts) in itertools.product(
+                systems, plot['subplots']
+        ):
+            color = obs_color(obs, subobs)
+            scale = opts.get('scale')
+
+            linestyle, fill_markers = {
+                'PbPb2760': ('solid', True),
+                'PbPb5020': ('dashed', False),
+            }[system]
 
             x = model.map_data[system][obs][subobs]['x']
-            y = model.map_data[system][obs][subobs]['Y'] * factor
+            y = model.map_data[system][obs][subobs]['Y']
 
-            ax.plot(x, y, color=color, lw=.5)
+            if scale is not None:
+                y = y*scale
 
-            ax.text(
-                x[-1] + 2.5,
-                model.map_data[system][obs][subobs]['Y'][-1] * factor,
-                label,
-                color=darken(color), ha='left', va='center'
-            )
+            ax.plot(x, y, color=color, ls=linestyle)
+            handles['model'][system] = \
+                lines.Line2D([], [], color=offblack, ls=linestyle)
+
+            if 'label' in opts and (obs, subobs) not in labels:
+                labels[obs, subobs] = ax.text(
+                    x[-1] + 3, y[-1],
+                    opts['label'],
+                    color=darken(color), ha='left', va='center'
+                )
 
             try:
                 dset = expt.data[system][obs][subobs]
@@ -410,45 +452,68 @@ def observables_map():
                 continue
 
             x = dset['x']
-            yexp = dset['y'] * factor
+            yexp = dset['y']
             yerr = dset['yerr']
+            yerrstat = yerr.get('stat')
+            yerrsys = yerr.get('sys', yerr.get('sum'))
 
-            ax.errorbar(
-                x, yexp, yerr=yerr.get('stat'), fmt='o', ms=1.7,
-                capsize=0, color='.25', zorder=1000
+            if scale is not None:
+                yexp = yexp*scale
+                if yerrstat is not None:
+                    yerrstat = yerrstat*scale
+                if yerrsys is not None:
+                    yerrsys = yerrsys*scale
+
+            handles['expt'][system] = ax.errorbar(
+                x, yexp, yerr=yerrstat, fmt='o', ms=1.7,
+                capsize=0, color=offblack,
+                mfc=(offblack if fill_markers else '.9'),
+                mec=offblack, mew=(0 if fill_markers else .25),
+                zorder=1000
             )
 
-            yerrsys = yerr.get('sys', yerr.get('sum'))
             ax.fill_between(
                 x, yexp - yerrsys, yexp + yerrsys,
-                color='.9', zorder=-10
+                facecolor='.9', zorder=-10,
             )
 
-            ratio_ax.plot(x, y/yexp, color=color)
+            ratio_ax.plot(x, y/yexp, color=color, ls=linestyle)
 
-        if title == 'Yields':
+        if plot.get('yscale') == 'log':
             ax.set_yscale('log')
             ax.minorticks_off()
         else:
             auto_ticks(ax, 'y', nbins=4, minor=2)
 
-        if ax.is_first_row():
-            ax.set_title(title)
-        elif ratio_ax.is_last_row():
+        for a in [ax, ratio_ax]:
+            a.set_xlim(0, 80)
+            auto_ticks(a, 'x', nbins=5, minor=2)
+
+        if ratio_ax.is_last_row():
             ratio_ax.set_xlabel('Centrality %')
 
-        if ax.is_last_col():
-            ax.text(
-                1.07, 0, format_system(system),
-                transform=ax.transAxes, ha='left', va='bottom',
-                size=plt.rcParams['axes.titlesize'], rotation=-90
+        ax.set_ylim(plot['ylim'])
+        ax.set_ylabel(plot['ylabel'])
+
+        if plot.get('legend'):
+            ax.legend(
+                [handles[t][s] for t in ['model', 'expt'] for s in systems],
+                [fmt.format(parse_system(s)[1]/1000)
+                 for fmt in ['', '{} TeV'] for s in systems],
+                ncol=2, loc='upper left', bbox_to_anchor=(0, .94),
+                columnspacing=0, handletextpad=0
             )
 
-        ax.set_ylabel(ylabel)
-        ax.set_ylim({'mean_pT': (0, 1.75), 'vnk': (0, .12)}.get(obs, ylim))
+        ax.text(
+            .5, 1 if ax.is_first_row() else .97, plot['title'],
+            transform=ax.transAxes, ha='center', va='top',
+            size=plt.rcParams['axes.labelsize']
+        )
 
         ratio_ax.axhline(1, lw=.5, color='0.5', zorder=-100)
-        ratio_ax.axhspan(0.9, 1.1, color='0.95', zorder=-200)
+        ratio_ax.axhspan(.9, 1.1, color='0.93', zorder=-200)
+        ratio_ax.set_ylim(.85, 1.15)
+        ratio_ax.set_ylabel('Ratio')
         ratio_ax.text(
             ratio_ax.get_xlim()[1], .9, '±10%',
             color='.6', zorder=-50,
@@ -456,11 +521,7 @@ def observables_map():
             size=plt.rcParams['xtick.labelsize']
         )
 
-        ratio_ax.set_ylim(0.8, 1.2)
-        ratio_ax.set_yticks(np.arange(80, 121, 20)/100)
-        ratio_ax.set_ylabel('Ratio')
-
-    set_tight(fig, w_pad=1, rect=[0, 0, .97, 1])
+    set_tight(fig)
 
 
 @plot
