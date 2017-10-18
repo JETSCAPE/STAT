@@ -1061,24 +1061,25 @@ def flow_corr():
     Symmetric cumulants SC(m, n) at the MAP point compared to experiment.
 
     """
-    plots, width_ratios = zip(*[
-        (('sc_central', 1e-7), 2),
-        (('sc', 2.9e-6), 3),
-    ])
-
-    def label(*mn):
-        return r'$\mathrm{{SC}}({}, {})$'.format(*mn)
-
     fig, axes = plt.subplots(
-        figsize=(textwidth, .42*textwidth),
-        ncols=len(plots), gridspec_kw=dict(width_ratios=width_ratios)
+        figsize=(textwidth, .75*textwidth),
+        nrows=2, ncols=2, gridspec_kw=dict(width_ratios=[2, 3])
     )
 
     cmapx_normal = .7
     cmapx_pred = .5
     dashes_pred = [3, 2]
 
-    for (obs, ylim), ax in zip(plots, axes):
+    def label(*mn, normed=False):
+        fmt = r'\mathrm{{SC}}({0}, {1})'
+        if normed:
+            fmt += r'/\langle v_{0}^2 \rangle\langle v_{1}^2 \rangle'
+        return fmt.format(*mn).join('$$')
+
+    for obs, ax in zip(
+            ['sc_central', 'sc', 'sc_normed_central', 'sc_normed'],
+            axes.flat
+    ):
         for (mn, cmap), sys in itertools.product(
                 [
                     ((4, 2), 'Blues'),
@@ -1097,10 +1098,7 @@ def flow_corr():
             if pred:
                 kwargs.update(dashes=dashes_pred)
 
-            if ax.is_last_col():
-                if not pred:
-                    kwargs.update(label=label(*mn))
-            else:
+            if ax.is_first_col() and ax.is_first_row():
                 fmt = '{:.2f} TeV'
                 if pred:
                     fmt += ' (prediction)'
@@ -1110,6 +1108,8 @@ def flow_corr():
                         [], [], color=plt.cm.Greys(cmapx),
                         label=lbl, **kwargs
                     ))
+            elif ax.is_last_col() and not pred:
+                kwargs.update(label=label(*mn, normed='normed' in obs))
 
             ax.plot(
                 x, y, lw=.75,
@@ -1139,20 +1139,23 @@ def flow_corr():
             zorder=-100
         )
 
-        ax.set_xlabel('Centrality %')
-        ax.set_ylim(-ylim, ylim)
+        ax.set_xlim(0, 10 if 'central' in obs else 70)
 
-        auto_ticks(ax, 'y', nbins=6, minor=2)
+        auto_ticks(ax, nbins=6, minor=2)
+
+        ax.legend(loc='best')
 
         if ax.is_first_col():
-            ax.set_ylabel(label('m', 'n'))
+            ax.set_ylabel(label('m', 'n', normed='normed' in obs))
 
-        ax.legend(loc='upper left')
-
-        ax.set_title(dict(
-            sc_central='Most central collisions',
-            sc='Minimum bias'
-        )[obs])
+        if ax.is_first_row():
+            ax.set_title(
+                'Most central collisions'
+                if 'central' in obs else
+                'Minimum bias'
+            )
+        else:
+            ax.set_xlabel('Centrality %')
 
 
 @plot

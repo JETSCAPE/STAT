@@ -59,7 +59,7 @@ def corr2(Qn, N):
     return (csq(Qn) - N).sum() / (N*(N - 1)).sum()
 
 
-def symmetric_cumulant(events, m, n):
+def symmetric_cumulant(events, m, n, normalize=False):
     """
     Compute the symmetric cumulant SC(m, n).
 
@@ -79,7 +79,12 @@ def symmetric_cumulant(events, m, n):
     cm2 = corr2(Q[m], N)
     cn2 = corr2(Q[n], N)
 
-    return cm2n2 - cm2*cn2
+    sc = cm2n2 - cm2*cn2
+
+    if normalize:
+        sc /= cm2*cn2
+
+    return sc
 
 
 # fully specify numeric data types, including endianness and size, to
@@ -170,7 +175,9 @@ class ModelData:
 
             if obs.startswith('sc'):
                 mn = obs_stack.pop()
-                return lambda events: symmetric_cumulant(events, *mn)
+                return lambda events: symmetric_cumulant(
+                    events, *mn, normalize='normed' in obs
+                )
 
         compute_bin = _compute_bin()
 

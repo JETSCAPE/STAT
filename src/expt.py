@@ -111,7 +111,7 @@ class HEPData:
 
         """
         for y in self._data['dependent_variables']:
-            if name is None or y['header']['name'] == name:
+            if name is None or y['header']['name'].startswith(name):
                 y_quals = {q['name']: q['value'] for q in y['qualifiers']}
                 if all(y_quals[k] == v for k, v in quals.items()):
                     return y['values']
@@ -279,7 +279,12 @@ def _data():
         data[system][obs][n, 2] = dset
 
     # PbPb2760 flow correlations
-    for obs, table in [('sc', 1), ('sc_central', 3)]:
+    for obs, table in [
+            ('sc', 1),
+            ('sc_normed', 2),
+            ('sc_central', 3),
+            ('sc_normed_central', 4)
+    ]:
         d = HEPData(1452590, table)
         data['PbPb2760'][obs] = {
             mn: d.dataset('SC({},{})'.format(*mn))
