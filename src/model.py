@@ -255,7 +255,7 @@ def _data(system, dataset='main'):
     data = ModelData(*files).observables_like(data)
 
     logging.info('writing cache file %s', cachefile)
-    cachefile.parent.mkdir(exist_ok=True)
+    cachefile.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(data, cachefile, protocol=pickle.HIGHEST_PROTOCOL)
 
     return data
