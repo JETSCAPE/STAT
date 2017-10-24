@@ -1,4 +1,17 @@
-""" Gaussian process emulator """
+"""
+Trains Gaussian process emulators.
+
+When run as a script, allows retraining emulators, specifying the number of
+principal components, and other options (however it is not necessary to do this
+explicitly --- the emulators will be trained automatically when needed).  Run
+``python -m src.emulator --help`` for usage information.
+
+Uses the `scikit-learn <http://scikit-learn.org>`_ implementations of
+`principal component analysis (PCA)
+<http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html>`_
+and `Gaussian process regression
+<http://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessRegressor.html>`_.
+"""
 
 import logging
 import pickle
@@ -51,8 +64,7 @@ class Emulator:
     could be tricky.
 
     """
-    # observables to emulate
-    # list of 2-tuples: (obs, [list of subobs])
+    #: Observables to emulate as a list of 2-tuples `(obs, [list of subobs])`.
     observables = [
         ('dNch_deta', [None]),
         ('dET_deta', [None]),
@@ -154,8 +166,8 @@ class Emulator:
     @classmethod
     def from_cache(cls, system, retrain=False, **kwargs):
         """
-        Load from the cache if available, otherwise create and cache a new
-        instance.
+        Load the emulator for `system` from the cache if available, otherwise
+        train and cache a new instance.
 
         """
         cachefile = cachedir / 'emulator' / '{}.pkl'.format(system)
@@ -198,16 +210,16 @@ class Emulator:
 
     def predict(self, X, return_cov=False, extra_std=0):
         """
-        Predict model output at X.
+        Predict model output at `X`.
 
-        X must be a 2D array-like with shape (nsamples, ndim).  It is passed
-        directly to sklearn GaussianProcessRegressor.predict().
+        X must be a 2D array-like with shape `(nsamples, ndim)`.  It is passed
+        directly to sklearn `GaussianProcessRegressor.predict()`.
 
-        If return_cov is true, return a tuple (mean, cov), otherwise only
+        If `return_cov` is true, return a tuple `(mean, cov)`, otherwise only
         return the mean.
 
         The mean is returned as a nested dict of observable arrays, each with
-        shape (nsamples, n_cent_bins).
+        shape `(nsamples, n_cent_bins)`.
 
         The covariance is returned as a proxy object which extracts observable
         sub-blocks using a dict-like interface:
@@ -224,12 +236,12 @@ class Emulator:
         <covariance matrix between pion dN/dy and kaon mean pT>
 
         The shape of the extracted covariance blocks are
-        (nsamples, n_cent_bins_1, n_cent_bins_2).
+        `(nsamples, n_cent_bins_1, n_cent_bins_2)`.
 
         NB: the covariance is only computed between observables and centrality
         bins, not between sample points.
 
-        extra_std is additional uncertainty which is added to each GP's
+        `extra_std` is additional uncertainty which is added to each GP's
         predictive uncertainty, e.g. to account for model systematic error.  It
         may either be a scalar or an array-like of length nsamples.
 

@@ -1,4 +1,40 @@
-""" model output """
+"""
+Computes model observables to match experimental data.
+Prints all model data when run as a script.
+
+Model data files are expected with the file structure
+:file:`model_output/{design}/{system}/{design_point}.dat`, where
+:file:`{design}` is a design type, :file:`{system}` is a system string, and
+:file:`{design_point}` is a design point name.
+
+For example, the structure of my :file:`model_output` directory is ::
+
+    model_output
+    ├── main
+    │   ├── PbPb2760
+    │   │   ├── 000.dat
+    │   │   └── 001.dat
+    │   └── PbPb5020
+    │       ├── 000.dat
+    │       └── 001.dat
+    └── validation
+        ├── PbPb2760
+        │   ├── 000.dat
+        │   └── 001.dat
+        └── PbPb5020
+            ├── 000.dat
+            └── 001.dat
+
+I have two design types (main and validation), two systems, and my design
+points are numbered 000-499 (most numbers omitted for brevity).
+
+Data files are expected to have the binary format created by my `heavy-ion
+collision event generator
+<https://github.com/jbernhard/heavy-ion-collisions-osg>`_.
+
+Of course, if you have a different data organization scheme and/or format,
+that's fine.  Modify the code for your needs.
+"""
 
 import logging
 from pathlib import Path
@@ -102,6 +138,7 @@ class ModelData:
     """
     species = ['pion', 'kaon', 'proton', 'Lambda', 'Sigma0', 'Xi', 'Omega']
 
+    #: The expected binary data type.
     dtype = np.dtype([
         ('initial_entropy', float_t),
         ('nsamples', int_t),

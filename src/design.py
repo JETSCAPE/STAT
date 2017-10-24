@@ -1,4 +1,23 @@
-""" Latin-hypercube parameter design """
+"""
+Generates Latin-hypercube parameter designs.
+
+When run as a script, writes input files for use with my
+`heavy-ion collision event generator
+<https://github.com/jbernhard/heavy-ion-collisions-osg>`_.
+Run ``python -m src.design --help`` for usage information.
+
+.. warning::
+
+    This module uses the R `lhs package
+    <https://cran.r-project.org/package=lhs>`_ to generate maximin
+    Latin-hypercube samples.  As far as I know, there is no equivalent library
+    for Python (I am aware of `pyDOE <https://pythonhosted.org/pyDOE>`_, but
+    that uses a much more rudimentary algorithm for maximin sampling).
+
+    This means that R must be installed with the lhs package (run
+    ``install.packages('lhs')`` in an R session).
+
+"""
 
 import itertools
 import logging
@@ -13,7 +32,8 @@ from . import cachedir, parse_system
 
 def generate_lhs(npoints, ndim, seed):
     """
-    Generate a maximin LHS.
+    Generate a maximin Latin-hypercube sample (LHS) with the given number of
+    points, dimensions, and random seed.
 
     """
     logging.debug(
@@ -66,22 +86,18 @@ class Design:
 
     Public attributes:
 
-        system: the system string
-        projectiles, beam energy: system projectile pair and beam energy
-        type: 'main' or 'validation'
-        keys: list of parameter keys
-        labels: list of parameter display labels (for TeX / matplotlib)
-        range: list of parameter (min, max) tuples
-        min, max: np.arrays of parameter min and max
-        ndim: number of parameters (i.e. dimensions)
-        points: list of design point names (formatted numbers)
-        array: the actual design array
+    - **system:** the system string
+    - **projectiles, beam energy:** system projectile pair and beam energy
+    - **type:** 'main' or 'validation'
+    - **keys:** list of parameter keys
+    - **labels:** list of parameter display labels (for TeX / matplotlib)
+    - **range:** list of parameter (min, max) tuples
+    - **min, max:** numpy arrays of parameter min and max
+    - **ndim:** number of parameters (i.e. dimensions)
+    - **points:** list of design point names (formatted numbers)
+    - **array:** the actual design array
 
-    The class also implicitly converts to np.array.
-
-    Public methods:
-
-        write_files: creates input files for running events
+    The class also implicitly converts to a numpy array.
 
     This is probably the worst class in this project, and certainly the least
     generic.  It will probably need to be heavily edited for use in any other
