@@ -86,16 +86,16 @@ class Design:
 
     Public attributes:
 
-    - **system:** the system string
-    - **projectiles, beam energy:** system projectile pair and beam energy
-    - **type:** 'main' or 'validation'
-    - **keys:** list of parameter keys
-    - **labels:** list of parameter display labels (for TeX / matplotlib)
-    - **range:** list of parameter (min, max) tuples
-    - **min, max:** numpy arrays of parameter min and max
-    - **ndim:** number of parameters (i.e. dimensions)
-    - **points:** list of design point names (formatted numbers)
-    - **array:** the actual design array
+    - ``system``: the system string
+    - ``projectiles``, ``beam_energy``: system projectile pair and beam energy
+    - ``type``: 'main' or 'validation'
+    - ``keys``: list of parameter keys
+    - ``labels``: list of parameter display labels (for TeX / matplotlib)
+    - ``range``: list of parameter (min, max) tuples
+    - ``min``, ``max``: numpy arrays of parameter min and max
+    - ``ndim``: number of parameters (i.e. dimensions)
+    - ``points``: list of design point names (formatted numbers)
+    - ``array``: the actual design array
 
     The class also implicitly converts to a numpy array.
 

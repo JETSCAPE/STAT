@@ -190,7 +190,7 @@ def _data():
     - system
     - observable
     - subobservable
-    - dataset (created by `HEPData.dataset`)
+    - dataset (created by :meth:`HEPData.dataset`)
 
     For example, ``data['PbPb2760']['dN_dy']['pion']`` retrieves the dataset
     for pion dN/dy in Pb+Pb collisions at 2.76 TeV.
@@ -316,7 +316,8 @@ def _data():
     return data
 
 
-#: A nested dict containing all the experimental data, created by `_data`.
+#: A nested dict containing all the experimental data, created by the
+#: :func:`_data` function.
 data = _data()
 
 

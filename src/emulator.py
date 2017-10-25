@@ -64,7 +64,8 @@ class Emulator:
     could be tricky.
 
     """
-    #: Observables to emulate as a list of 2-tuples `(obs, [list of subobs])`.
+    #: Observables to emulate as a list of 2-tuples
+    #: ``(obs, [list of subobs])``.
     observables = [
         ('dNch_deta', [None]),
         ('dET_deta', [None]),
@@ -212,14 +213,14 @@ class Emulator:
         """
         Predict model output at `X`.
 
-        X must be a 2D array-like with shape `(nsamples, ndim)`.  It is passed
-        directly to sklearn `GaussianProcessRegressor.predict()`.
+        X must be a 2D array-like with shape ``(nsamples, ndim)``.  It is passed
+        directly to sklearn :meth:`GaussianProcessRegressor.predict`.
 
-        If `return_cov` is true, return a tuple `(mean, cov)`, otherwise only
+        If `return_cov` is true, return a tuple ``(mean, cov)``, otherwise only
         return the mean.
 
         The mean is returned as a nested dict of observable arrays, each with
-        shape `(nsamples, n_cent_bins)`.
+        shape ``(nsamples, n_cent_bins)``.
 
         The covariance is returned as a proxy object which extracts observable
         sub-blocks using a dict-like interface:
@@ -236,7 +237,7 @@ class Emulator:
         <covariance matrix between pion dN/dy and kaon mean pT>
 
         The shape of the extracted covariance blocks are
-        `(nsamples, n_cent_bins_1, n_cent_bins_2)`.
+        ``(nsamples, n_cent_bins_1, n_cent_bins_2)``.
 
         NB: the covariance is only computed between observables and centrality
         bins, not between sample points.
@@ -279,10 +280,10 @@ class Emulator:
 
     def sample_y(self, X, n_samples=1, random_state=None):
         """
-        Sample model output at X.
+        Sample model output at `X`.
 
         Returns a nested dict of observable arrays, each with shape
-        (n_samples_X, n_samples, n_cent_bins).
+        ``(n_samples_X, n_samples, n_cent_bins)``.
 
         """
         # Sample the GP for each emulated PC.  The remaining components are

@@ -5,7 +5,8 @@ sampler (emcee) <http://dfm.io/emcee>`_.
 This module must be run explicitly to create the posterior distribution.
 Run ``python -m src.mcmc --help`` for complete usage information.
 
-On first run, the number of walkers and burn-in steps must be specified, e.g.::
+On first run, the number of walkers and burn-in steps must be specified, e.g.
+::
 
     python -m src.mcmc --nwalkers 500 --nburnsteps 100 200
 
@@ -14,7 +15,7 @@ This will create the HDF5 file :file:`mcmc/chain.hdf` (default path).
 
 On subsequent runs, the chain resumes from the last point and the number of
 walkers is inferred from the chain, so only the number of production steps is
-required, e.g.::
+required, e.g. ::
 
     python -m src.mcmc 300
 
@@ -119,7 +120,7 @@ class Chain:
 
     """
     #: Observables to calibrate as a list of 2-tuples
-    #: `(obs, [list of subobs])`.
+    #: ``(obs, [list of subobs])``.
     #: Each observable is checked for each system
     #: and silently ignored if not found
     observables = [
@@ -280,7 +281,7 @@ class Chain:
     def map(f, args):
         """
         Dummy function so that this object can be used as a 'pool' for
-        emcee.EnsembleSampler.
+        :meth:`emcee.EnsembleSampler`.
 
         """
         return f(args)
