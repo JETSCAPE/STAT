@@ -264,12 +264,14 @@ def _data(system, dataset='main'):
         # this DOES NOT check any other logical dependencies, e.g. the
         # experimental data
         # to force recomputation, delete the cache file
-        mtime = cachefile.stat().st_mtime
-        if all(f.stat().st_mtime < mtime for f in files):
-            logging.debug('loading observables cache file %s', cachefile)
-            return joblib.load(cachefile)
-        else:
-            logging.debug('cache file %s is older than event data', cachefile)
+        logging.debug('loading observables cache file %s', cachefile)
+        return joblib.load(cachefile)
+        #mtime = cachefile.stat().st_mtime
+        #if all(f.stat().st_mtime < mtime for f in files):
+        #    logging.debug('loading observables cache file %s', cachefile)
+        #    return joblib.load(cachefile)
+        #else:
+        #    logging.debug('cache file %s is older than event data', cachefile)
     else:
         logging.debug('cache file %s does not exist', cachefile)
 
