@@ -23,7 +23,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor as GPR
 from sklearn.gaussian_process import kernels
 from sklearn.preprocessing import StandardScaler
 
-from . import cachedir, lazydict, model
+from . import cachedir, lazydict#, model
 from .design import Design
 
 
@@ -66,14 +66,15 @@ class Emulator:
     """
     #: Observables to emulate as a list of 2-tuples
     #: ``(obs, [list of subobs])``.
-    observables = [
-        ('dNch_deta', [None]),
-        ('dET_deta', [None]),
-        ('dN_dy', ['pion', 'kaon', 'proton']),
-        ('mean_pT', ['pion', 'kaon', 'proton']),
-        ('pT_fluct', [None]),
-        ('vnk', [(2, 2), (3, 2), (4, 2)]),
-    ]
+ #   observables = [
+ #       ('dNch_deta', [None]),
+ #       ('dET_deta', [None]),
+ #       ('dN_dy', ['pion', 'kaon', 'proton']),
+ #       ('mean_pT', ['pion', 'kaon', 'proton']),
+ #       ('pT_fluct', [None]),
+ #       ('vnk', [(2, 2), (3, 2), (4, 2)]),
+ #   ]
+    observables = [('R_AA',[None])]
 
     def __init__(self, system, npc=10, nrestarts=0):
         logging.info(
@@ -83,13 +84,14 @@ class Emulator:
 
         Y = []
         self._slices = {}
-
+   
+        data_list = joblib.load(filename = 'cache/model/main/full_data_dict.p')
         # Build an array of all observables to emulate.
         nobs = 0
         for obs, subobslist in self.observables:
             self._slices[obs] = {}
             for subobs in subobslist:
-                Y.append(model.data[system][obs][subobs]['Y'])
+                Y.append(data_list[system][obs][subobs]['Y'])
                 n = Y[-1].shape[1]
                 self._slices[obs][subobs] = slice(nobs, nobs + n)
                 nobs += n
@@ -108,6 +110,13 @@ class Emulator:
         # Define kernel (covariance function):
         # Gaussian correlation (RBF) plus a noise term.
         design = Design(system)
+
+       # design = joblib.load(filename='cache/lhs/design_s.p')
+       # maxes = np.apply_along_axis(max,0,design)
+       # mins = np.apply_along_axis(min,0,design)
+
+       # ptp = maxes - mins
+
         ptp = design.max - design.min
         kernel = (
             1. * kernels.RBF(
