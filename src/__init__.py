@@ -24,11 +24,11 @@ cachedir.mkdir(parents=True, exist_ok=True)
 #: such as ``'PbPb2760'``, ``'AuAu200'``, ``'pPb5020'``.
 #: Even if the project uses only a single system,
 #: this should still be a list of one system string.
-systems = ['PbPb2760', 'PbPb5020']
-#systems = ['PbPb5020']
+#systems = ['PbPb2760', 'PbPb5020']
+systems = ['PbPb5020']
 
 keys = ['alpha_s','lambda_jet']
-labels = [r'\alpha_s^\text{med}',r'\lambda^\text{jet}']
+labels = [r'\alpha_s',r'\lambda}']
 ranges = [(0.1,0.3),(0.05,0.35)]
 design_array = pickle.load((cachedir / 'lhs/design_s.p').open('rb'))
 

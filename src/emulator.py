@@ -76,7 +76,7 @@ class Emulator:
  #   ]
     observables = [('R_AA',[None])]
 
-    def __init__(self, system, npc=10, nrestarts=0):
+    def __init__(self, system, npc=3, nrestarts=0):
         logging.info(
             'training emulator for system %s (%d PC, %d restarts)',
             system, npc, nrestarts
