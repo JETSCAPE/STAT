@@ -44,7 +44,7 @@ from hic import flow
 import numpy as np
 from sklearn.externals import joblib
 
-from . import workdir, cachedir, systems, lazydict, expt
+from . import workdir, cachedir, systems, lazydict#, expt
 from .design import Design
 
 

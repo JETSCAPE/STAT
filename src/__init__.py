@@ -25,13 +25,21 @@ cachedir.mkdir(parents=True, exist_ok=True)
 #: Even if the project uses only a single system,
 #: this should still be a list of one system string.
 #systems = ['PbPb2760', 'PbPb5020']
+#systems = ['PbPb2760']
 systems = ['PbPb5020']
+#systems = ['AuAu200']
 
-keys = ['alpha_s','lambda_jet']
-labels = [r'\alpha_s',r'\lambda}']
+
+
+
+
+
+#If running Jonah's data, these are obsolete 
+keys = ['lambda_jet','alpha_s']
+labels = [r'\Lambda',r'\alpha_s}']
 ranges = [(0.1,0.3),(0.05,0.35)]
 design_array = pickle.load((cachedir / 'lhs/design_s.p').open('rb'))
-
+#design_array = None
 def parse_system(system):
     """
     Parse a system string into a pair of projectiles and a beam energy.

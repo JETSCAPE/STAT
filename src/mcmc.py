@@ -32,11 +32,85 @@ import emcee
 import h5py
 import numpy as np
 from scipy.linalg import lapack
-
-from . import workdir, systems, expt
+from sklearn.externals import joblib
+from . import workdir, systems#, expt
 from .design import Design
 from .emulator import emulators
 
+
+exp_data_list = joblib.load(filename = 'cache/hepdata/data_list_exp.p')
+
+def cov(
+        system, obs1, subobs1, obs2, subobs2,
+        stat_frac=1e-4, sys_corr_length=100, cross_factor=.8,
+        corr_obs={
+            frozenset({'dNch_deta', 'dET_deta', 'dN_dy'}),
+        }
+):
+    """
+    Estimate a covariance matrix for the given system and pair of observables,
+    e.g.:
+
+    >>> cov('PbPb2760', 'dN_dy', 'pion', 'dN_dy', 'pion')
+    >>> cov('PbPb5020', 'dN_dy', 'pion', 'dNch_deta', None)
+
+    For each dataset, stat and sys errors are used if available.  If only
+    "summed" error is available, it is treated as sys error, and `stat_frac`
+    sets the fractional stat error.
+
+    Systematic errors are assumed to have a Gaussian correlation as a function
+    of centrality percentage, with correlation length set by `sys_corr_length`.
+
+    If obs{1,2} are the same but subobs{1,2} are different, the sys error
+    correlation is reduced by `cross_factor`.
+
+    If obs{1,2} are different and uncorrelated, the covariance is zero.  If
+    they are correlated, the sys error correlation is reduced by
+    `cross_factor`.  Two different obs are considered correlated if they are
+    both a member of one of the groups in `corr_obs` (the groups must be
+    set-like objects).  By default {Nch, ET, dN/dy} are considered correlated
+    since they are all related to particle / energy production.
+
+    """
+    def unpack(obs, subobs):
+        dset = exp_data_list[system][obs][subobs]
+        yerr = dset['yerr']
+
+        try:
+            stat = yerr['stat']
+            sys = yerr['sys']
+        except KeyError:
+            stat = dset['y'] * stat_frac
+            sys = yerr['sum']
+
+        return dset['x'], stat, sys
+
+    x1, stat1, sys1 = unpack(obs1, subobs1)
+    x2, stat2, sys2 = unpack(obs2, subobs2)
+
+    if obs1 == obs2:
+        same_obs = (subobs1 == subobs2)
+    else:
+        # check if obs are both in a correlated group
+        if any({obs1, obs2} <= c for c in corr_obs):
+            same_obs = False
+        else:
+            return np.zeros((x1.size, x2.size))
+
+    # compute the sys error covariance
+    C = (
+        np.exp(-.5*(np.subtract.outer(x1, x2)/sys_corr_length)**2) *
+        np.outer(sys1, sys2)
+    )
+
+    if same_obs:
+        # add stat error to diagonal
+        C.flat[::C.shape[0]+1] += stat1**2
+    else:
+        # reduce correlation for different observables
+        C *= cross_factor
+
+    return C
 
 def mvn_loglike(y, cov):
     """
@@ -119,18 +193,22 @@ class Chain:
     system designs have the same parameters and ranges (except for the norms).
 
     """
-    #: Observables to calibrate as a list of 2-tuples
-    #: ``(obs, [list of subobs])``.
-    #: Each observable is checked for each system
-    #: and silently ignored if not found
-    observables = [
-        ('dNch_deta', [None]),
-        ('dET_deta', [None]),
-        ('dN_dy', ['pion', 'kaon', 'proton']),
-        ('mean_pT', ['pion', 'kaon', 'proton']),
-        ('pT_fluct', [None]),
-        ('vnk', [(2, 2), (3, 2), (4, 2)]),
-    ]
+   # : Observables to calibrate as a list of 2-tuples
+   # : ``(obs, [list of subobs])``.
+   # : Each observable is checked for each system
+   # : and silently ignored if not found
+ #   observables = [
+ #       ('dNch_deta', [None]),
+ #       ('dET_deta', [None]),
+ #       ('dN_dy', ['pion', 'kaon', 'proton']),
+ #       ('mean_pT', ['pion', 'kaon', 'proton']),
+ #       ('pT_fluct', [None]),
+ #       ('vnk', [(2, 2), (3, 2), (4, 2)]),
+ #   ]
+
+
+    #observables = [('R_AA_1',[None]),('R_AA_2',[None])]
+    observables = [('R_AA_2',[None])]
 
     def __init__(self, path=workdir / 'mcmc' / 'chain.hdf'):
         self.path = path
@@ -145,7 +223,7 @@ class Chain:
                 d = Design(sys)
                 klr = zip(d.keys, d.labels, d.range)
                 k, l, r = next(klr)
-                assert k == 'norm'
+                #assert k == 'lambda_jet'
                 yield (
                     '{} {}'.format(k, sys),
                     '{}\n{:.2f} TeV'.format(l, d.beam_energy/1000),
@@ -154,7 +232,7 @@ class Chain:
 
             yield from klr
 
-            yield 'model_sys_err', r'$\sigma\ \mathrm{model\ sys}$', (0., .4)
+            #yield 'model_sys_err', r'$\sigma\ \mathrm{model\ sys}$', (0., .4)
 
         self.keys, self.labels, self.range = map(
             list, zip(*keys_labels_range())
@@ -163,14 +241,14 @@ class Chain:
         self.ndim = len(self.range)
         self.min, self.max = map(np.array, zip(*self.range))
 
-        self._common_indices = list(range(len(systems), self.ndim - 1))
+        self._common_indices = list(range(len(systems), self.ndim))
 
         self._slices = {}
         self._expt_y = {}
         self._expt_cov = {}
 
         # pre-compute the experimental data vectors and covariance matrices
-        for sys, sysdata in expt.data.items():
+        for sys, sysdata in exp_data_list.items():
             nobs = 0
 
             self._slices[sys] = []
@@ -192,17 +270,17 @@ class Chain:
                         (obs, subobs, slice(nobs, nobs + n))
                     )
                     nobs += n
-
+            print(nobs)
             self._expt_y[sys] = np.empty(nobs)
             self._expt_cov[sys] = np.empty((nobs, nobs))
 
             for obs1, subobs1, slc1 in self._slices[sys]:
-                self._expt_y[sys][slc1] = expt.data[sys][obs1][subobs1]['y']
+                self._expt_y[sys][slc1] = exp_data_list[sys][obs1][subobs1]['y']
                 for obs2, subobs2, slc2 in self._slices[sys]:
-                    self._expt_cov[sys][slc1, slc2] = expt.cov(
+                    self._expt_cov[sys][slc1, slc2] = cov(
                         sys, obs1, subobs1, obs2, subobs2
                     )
-
+        print(self._expt_y)
     def _predict(self, X, **kwargs):
         """
         Call each system emulator to predict model output at X.
@@ -216,7 +294,7 @@ class Chain:
             for n, sys in enumerate(systems)
         }
 
-    def log_posterior(self, X, extra_std_prior_scale=.05):
+    def log_posterior(self, X, extra_std_prior_scale=0):
         """
         Evaluate the posterior at `X`.
 
@@ -236,7 +314,8 @@ class Chain:
         nsamples = np.count_nonzero(inside)
 
         if nsamples > 0:
-            extra_std = X[inside, -1]
+            #extra_std = X[inside, -1]
+            extra_std = 0.0
             pred = self._predict(
                 X[inside], return_cov=True, extra_std=extra_std
             )
@@ -266,7 +345,7 @@ class Chain:
                 lp[inside] += list(map(mvn_loglike, dY, cov))
 
             # add prior for extra_std (model sys error)
-            lp[inside] += 2*np.log(extra_std) - extra_std/extra_std_prior_scale
+            #lp[inside] += 2*np.log(extra_std) - extra_std/extra_std_prior_scale
 
         return lp
 

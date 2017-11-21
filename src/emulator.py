@@ -23,7 +23,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor as GPR
 from sklearn.gaussian_process import kernels
 from sklearn.preprocessing import StandardScaler
 
-from . import cachedir, lazydict#, model
+from . import cachedir, lazydict, model
 from .design import Design
 
 
@@ -66,17 +66,18 @@ class Emulator:
     """
     #: Observables to emulate as a list of 2-tuples
     #: ``(obs, [list of subobs])``.
- #   observables = [
- #       ('dNch_deta', [None]),
- #       ('dET_deta', [None]),
- #       ('dN_dy', ['pion', 'kaon', 'proton']),
- #       ('mean_pT', ['pion', 'kaon', 'proton']),
- #       ('pT_fluct', [None]),
- #       ('vnk', [(2, 2), (3, 2), (4, 2)]),
- #   ]
-    observables = [('R_AA',[None])]
+   # observables = [
+   #     ('dNch_deta', [None]),
+   #     ('dET_deta', [None]),
+   #     ('dN_dy', ['pion', 'kaon', 'proton']),
+   #     ('mean_pT', ['pion', 'kaon', 'proton']),
+   #     ('pT_fluct', [None]),
+   #     ('vnk', [(2, 2), (3, 2), (4, 2)]),
+   # ]
+    #observables = [('R_AA_1',[None]),('R_AA_2',[None])]
+    observables = [('R_AA_2',[None])]
 
-    def __init__(self, system, npc=3, nrestarts=0):
+    def __init__(self, system, npc=10, nrestarts=0):
         logging.info(
             'training emulator for system %s (%d PC, %d restarts)',
             system, npc, nrestarts
@@ -97,6 +98,7 @@ class Emulator:
                 nobs += n
 
         Y = np.concatenate(Y, axis=1)
+        pickle.dump(Y,open('mod_dat.p','wb'))
 
         self.npc = npc
         self.nobs = nobs
@@ -317,7 +319,6 @@ emulators = lazydict(Emulator.from_cache)
 if __name__ == '__main__':
     import argparse
     from . import systems
-
     def arg_to_system(arg):
         if arg not in systems:
             raise argparse.ArgumentTypeError(arg)

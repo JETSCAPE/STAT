@@ -24,6 +24,7 @@ import subprocess
 import tempfile
 import warnings
 
+from sklearn.externals import joblib
 import h5py
 import hsluv
 import numpy as np
@@ -38,7 +39,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor as GPR
 from sklearn.gaussian_process import kernels
 from sklearn.mixture import GaussianMixture
 
-from . import workdir, systems, parse_system, expt, model, mcmc
+from . import workdir, systems, parse_system, mcmc#, model, expt
 from .design import Design
 from .emulator import emulators
 
@@ -204,7 +205,7 @@ def obs_color_hsluv(obs, subobs):
     if obs in {'dNch_deta', 'pT_fluct'}:
         return 250, 90, 55
 
-    if obs == 'dET_deta':
+    if obs == 'R_AA_2':
         return 10, 65, 55
 
     if obs in {'dN_dy', 'mean_pT'}:
@@ -1613,9 +1614,9 @@ def validation_all(system='PbPb2760'):
 
 @plot
 def validation_example(
-        system='PbPb2760',
-        obs='dNch_deta', subobs=None,
-        label=r'$dN_\mathrm{ch}/d\eta$',
+        system='PbPb5020',
+        obs='R_AA_2', subobs=None,
+        label=r'$R_{AA2}$',
         cent=(20, 30)
 ):
     """
@@ -1631,7 +1632,8 @@ def validation_example(
 
     ax_scatter, ax_hist = axes
 
-    vdata = model.validation_data[system][obs][subobs]
+    data_list_val = joblib.load(filename = 'cache/model/validation/data_dict_val.p')
+    vdata = data_list_val[system][obs][subobs]
     cent_slc = (slice(None), vdata['cent'].index(cent))
     y = vdata['Y'][cent_slc]
 
@@ -1641,6 +1643,7 @@ def validation_example(
     )
     y_ = mean[obs][subobs][cent_slc]
     std_ = np.sqrt(cov[(obs, subobs), (obs, subobs)].T.diagonal()[cent_slc])
+    print('made it')
 
     color = obs_color(obs, subobs)
     alpha = .6

@@ -321,77 +321,77 @@ def _data():
 data = _data()
 
 
-def cov(
-        system, obs1, subobs1, obs2, subobs2,
-        stat_frac=1e-4, sys_corr_length=100, cross_factor=.8,
-        corr_obs={
-            frozenset({'dNch_deta', 'dET_deta', 'dN_dy'}),
-        }
-):
-    """
-    Estimate a covariance matrix for the given system and pair of observables,
-    e.g.:
-
-    >>> cov('PbPb2760', 'dN_dy', 'pion', 'dN_dy', 'pion')
-    >>> cov('PbPb5020', 'dN_dy', 'pion', 'dNch_deta', None)
-
-    For each dataset, stat and sys errors are used if available.  If only
-    "summed" error is available, it is treated as sys error, and `stat_frac`
-    sets the fractional stat error.
-
-    Systematic errors are assumed to have a Gaussian correlation as a function
-    of centrality percentage, with correlation length set by `sys_corr_length`.
-
-    If obs{1,2} are the same but subobs{1,2} are different, the sys error
-    correlation is reduced by `cross_factor`.
-
-    If obs{1,2} are different and uncorrelated, the covariance is zero.  If
-    they are correlated, the sys error correlation is reduced by
-    `cross_factor`.  Two different obs are considered correlated if they are
-    both a member of one of the groups in `corr_obs` (the groups must be
-    set-like objects).  By default {Nch, ET, dN/dy} are considered correlated
-    since they are all related to particle / energy production.
-
-    """
-    def unpack(obs, subobs):
-        dset = data[system][obs][subobs]
-        yerr = dset['yerr']
-
-        try:
-            stat = yerr['stat']
-            sys = yerr['sys']
-        except KeyError:
-            stat = dset['y'] * stat_frac
-            sys = yerr['sum']
-
-        return dset['x'], stat, sys
-
-    x1, stat1, sys1 = unpack(obs1, subobs1)
-    x2, stat2, sys2 = unpack(obs2, subobs2)
-
-    if obs1 == obs2:
-        same_obs = (subobs1 == subobs2)
-    else:
-        # check if obs are both in a correlated group
-        if any({obs1, obs2} <= c for c in corr_obs):
-            same_obs = False
-        else:
-            return np.zeros((x1.size, x2.size))
-
-    # compute the sys error covariance
-    C = (
-        np.exp(-.5*(np.subtract.outer(x1, x2)/sys_corr_length)**2) *
-        np.outer(sys1, sys2)
-    )
-
-    if same_obs:
-        # add stat error to diagonal
-        C.flat[::C.shape[0]+1] += stat1**2
-    else:
-        # reduce correlation for different observables
-        C *= cross_factor
-
-    return C
+#def cov(
+#        system, obs1, subobs1, obs2, subobs2,
+#        stat_frac=1e-4, sys_corr_length=100, cross_factor=.8,
+#        corr_obs={
+#            frozenset({'dNch_deta', 'dET_deta', 'dN_dy'}),
+#        }
+#):
+#    """
+#    Estimate a covariance matrix for the given system and pair of observables,
+#    e.g.:
+#
+#    >>> cov('PbPb2760', 'dN_dy', 'pion', 'dN_dy', 'pion')
+#    >>> cov('PbPb5020', 'dN_dy', 'pion', 'dNch_deta', None)
+#
+#    For each dataset, stat and sys errors are used if available.  If only
+#    "summed" error is available, it is treated as sys error, and `stat_frac`
+#    sets the fractional stat error.
+#
+#    Systematic errors are assumed to have a Gaussian correlation as a function
+#    of centrality percentage, with correlation length set by `sys_corr_length`.
+#
+#    If obs{1,2} are the same but subobs{1,2} are different, the sys error
+#    correlation is reduced by `cross_factor`.
+#
+#    If obs{1,2} are different and uncorrelated, the covariance is zero.  If
+#    they are correlated, the sys error correlation is reduced by
+#    `cross_factor`.  Two different obs are considered correlated if they are
+#    both a member of one of the groups in `corr_obs` (the groups must be
+#    set-like objects).  By default {Nch, ET, dN/dy} are considered correlated
+#    since they are all related to particle / energy production.
+#
+#    """
+#    def unpack(obs, subobs):
+#        dset = data[system][obs][subobs]
+#        yerr = dset['yerr']
+#
+#        try:
+#            stat = yerr['stat']
+#            sys = yerr['sys']
+#        except KeyError:
+#            stat = dset['y'] * stat_frac
+#            sys = yerr['sum']
+#
+#        return dset['x'], stat, sys
+#
+#    x1, stat1, sys1 = unpack(obs1, subobs1)
+#    x2, stat2, sys2 = unpack(obs2, subobs2)
+#
+#    if obs1 == obs2:
+#        same_obs = (subobs1 == subobs2)
+#    else:
+#        # check if obs are both in a correlated group
+#        if any({obs1, obs2} <= c for c in corr_obs):
+#            same_obs = False
+#        else:
+#            return np.zeros((x1.size, x2.size))
+#
+#    # compute the sys error covariance
+#    C = (
+#        np.exp(-.5*(np.subtract.outer(x1, x2)/sys_corr_length)**2) *
+#        np.outer(sys1, sys2)
+#    )
+#
+#    if same_obs:
+#        # add stat error to diagonal
+#        C.flat[::C.shape[0]+1] += stat1**2
+#    else:
+#        # reduce correlation for different observables
+#        C *= cross_factor
+#
+#    return C
 
 
 def print_data(d, indent=0):
