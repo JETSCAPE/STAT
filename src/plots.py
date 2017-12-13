@@ -55,13 +55,13 @@ fullheight = 270/resolution
 
 plt.rcdefaults()
 plt.rcParams.update({
-    'font.family': 'sans-serif',
-    'font.sans-serif': ['Lato'],
+#    'font.family': 'sans-serif',
+#    'font.sans-serif': ['Lato'],
     'mathtext.fontset': 'custom',
     'mathtext.default': 'it',
-    'mathtext.rm': 'sans',
-    'mathtext.it': 'sans:italic:medium',
-    'mathtext.cal': 'sans',
+#    'mathtext.rm': 'sans',
+#    'mathtext.it': 'sans:italic:medium',
+#    'mathtext.cal': 'sans',
     'font.size': fontnormal,
     'legend.fontsize': fontnormal,
     'axes.labelsize': fontnormal,
