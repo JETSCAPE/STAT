@@ -47,7 +47,22 @@ design_array = pickle.load((cachedir / 'lhs/design_s.p').open('rb'))
 #Form MUST be data_list_loaded[system][observable][subobservable][{'Y','x'}]
 ###Note - 'Y' is an (n x p) numpy array of the output
 ###       'x' is a (1 x p) numpy array of numeric index of columns of Y (if exists). p_T in example below
-data_list_loaded = joblib.load(filename = 'cache/model/main/full_data_dict.p')
+data_list = joblib.load(filename = 'cache/model/main/full_data_dict.p')
+
+
+#Dictionary of the experimental data
+#Form MUST be exp_data_list[system][observable][subobservable][{'y':,'x':,'yerr':{'stat':,'sys'}}]
+###Note - 'y' is a (1 x p) numpy array of experimental data 
+###       'x' is a (1 x p) numpy array of numeric index of columns of Y (if exists). p_T in example below
+###       'yerr' is a dictionary with keys 'stat' and 'sys'
+###       'stat' is a (1 x p) array of statistical errors
+###       'sys' is a (1 x p) array of systematic errors
+exp_data_list = joblib.load(filename = 'cache/hepdata/data_list_exp.p')
+
+
+#Experimental covariance matrix
+exp_cov = joblib.load(filename = 'cache/hepdata/exp_cov.p')
+
 
 
 #: Observables to emulate as a list of 2-tuples

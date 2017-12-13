@@ -39,7 +39,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor as GPR
 from sklearn.gaussian_process import kernels
 from sklearn.mixture import GaussianMixture
 
-from . import workdir, systems, parse_system, mcmc#, model, expt
+from . import workdir, systems, parse_system, mcmc, data_list, exp_data_list#, model, expt
 from .design import Design
 from .emulator import emulators
 
@@ -246,40 +246,46 @@ def _observables_plots():
 
     return [
         dict(
-            title='Yields',
-            ylabel=(
-                r'$dN_\mathrm{ch}/d\eta,\ dN/dy,\ dE_T/d\eta\ [\mathrm{GeV}]$'
-            ),
-            ylim=(1, 1e5),
-            yscale='log',
-            height_ratio=1.5,
-            subplots=[
-                ('dNch_deta', None, dict(label=r'$N_\mathrm{ch}$', scale=25)),
-                ('dET_deta', None, dict(label=r'$E_T$', scale=5)),
-                *id_parts_plots('dN_dy')
-            ]
-        ),
-        dict(
-            title='Mean $p_T$',
-            ylabel=r'$\langle p_T \rangle$ [GeV]',
-            ylim=(0, 1.7),
-            subplots=id_parts_plots('mean_pT')
-        ),
-        dict(
-            title='Mean $p_T$ fluctuations',
-            ylabel=r'$\delta p_T/\langle p_T \rangle$',
-            ylim=(0, .04),
-            subplots=[('pT_fluct', None, dict())]
-        ),
-        dict(
-            title='Flow cumulants',
-            ylabel=r'$v_n\{2\}$',
-            ylim=(0, .12),
-            subplots=[
-                ('vnk', (n, 2), dict(label='$v_{}$'.format(n)))
-                for n in [2, 3, 4]
-            ]
+            title='RAA',
+            ylabel=r'$R_{AA}$',
+            subplots = [('R_AA_2', None, dict())],
+            ylim = (0,1)
         )
+       # dict(
+       #     title='Yields',
+       #     ylabel=(
+       #         r'$dN_\mathrm{ch}/d\eta,\ dN/dy,\ dE_T/d\eta\ [\mathrm{GeV}]$'
+       #     ),
+       #     ylim=(1, 1e5),
+       #     yscale='log',
+       #     height_ratio=1.5,
+       #     subplots=[
+       #         ('dNch_deta', None, dict(label=r'$N_\mathrm{ch}$', scale=25)),
+       #         ('dET_deta', None, dict(label=r'$E_T$', scale=5)),
+       #         *id_parts_plots('dN_dy')
+       #     ]
+       # ),
+       # dict(
+       #     title='Mean $p_T$',
+       #     ylabel=r'$\langle p_T \rangle$ [GeV]',
+       #     ylim=(0, 1.7),
+       #     subplots=id_parts_plots('mean_pT')
+       # ),
+       # dict(
+       #     title='Mean $p_T$ fluctuations',
+       #     ylabel=r'$\delta p_T/\langle p_T \rangle$',
+       #     ylim=(0, .04),
+       #     subplots=[('pT_fluct', None, dict())]
+       # ),
+       # dict(
+       #     title='Flow cumulants',
+       #     ylabel=r'$v_n\{2\}$',
+       #     ylim=(0, .12),
+       #     subplots=[
+       #         ('vnk', (n, 2), dict(label='$v_{}$'.format(n)))
+       #         for n in [2, 3, 4]
+       #     ]
+       # )
     ]
 
 
@@ -302,6 +308,9 @@ def _observables(posterior=False):
     if posterior:
         samples = mcmc.Chain().samples(100)
 
+    if len(systems)==1 & len(plots)==1:
+       axes = np.array(axes) 
+
     for (plot, system), ax in zip(
             itertools.product(plots, systems), axes.flat
     ):
@@ -309,11 +318,11 @@ def _observables(posterior=False):
             color = obs_color(obs, subobs)
             scale = opts.get('scale')
 
-            x = model.data[system][obs][subobs]['x']
+            x = data_list[system][obs][subobs]['x']
             Y = (
                 samples[system][obs][subobs]
                 if posterior else
-                model.data[system][obs][subobs]['Y']
+               data_list[system][obs][subobs]['Y']
             )
 
             if scale is not None:
@@ -331,7 +340,7 @@ def _observables(posterior=False):
                 )
 
             try:
-                dset = expt.data[system][obs][subobs]
+                dset = exp_data_list[system][obs][subobs]
             except KeyError:
                 continue
 
@@ -346,7 +355,7 @@ def _observables(posterior=False):
                 yerr = yerr*scale
 
             ax.errorbar(
-                x, y, yerr=yerr, fmt='o', ms=1.7,
+                x, y, yerr=1.96*yerr, fmt='o', ms=1.7,
                 capsize=0, color='.25', zorder=1000
             )
 
@@ -465,7 +474,7 @@ def observables_map():
                 )
 
             try:
-                dset = expt.data[system][obs][subobs]
+                dset = exp_data_list[system][obs][subobs]
             except KeyError:
                 continue
 
@@ -607,7 +616,7 @@ def find_map():
             color = obs_color(obs, subobs)
             scale = opts.get('scale')
 
-            x = model.data[system][obs][subobs]['x']
+            x = data_list[system][obs][subobs]['x']
             y = pred[system][obs][subobs][0]
 
             if scale is not None:
@@ -623,7 +632,7 @@ def find_map():
                 )
 
             try:
-                dset = expt.data[system][obs][subobs]
+                dset = exp_data_list[system][obs][subobs]
             except KeyError:
                 continue
 
@@ -1108,7 +1117,7 @@ def flow_corr():
             x = model.map_data[sys][obs][mn]['x']
             y = model.map_data[sys][obs][mn]['Y']
 
-            pred = obs not in expt.data[sys]
+            pred = obs not in exp_data_list[sys]
             cmapx = cmapx_pred if pred else cmapx_normal
 
             kwargs = {}
@@ -1138,9 +1147,9 @@ def flow_corr():
             if pred:
                 continue
 
-            x = expt.data[sys][obs][mn]['x']
-            y = expt.data[sys][obs][mn]['y']
-            yerr = expt.data[sys][obs][mn]['yerr']
+            x = exp_data_list[sys][obs][mn]['x']
+            y = exp_data_list[sys][obs][mn]['y']
+            yerr = exp_data_list[sys][obs][mn]['yerr']
 
             ax.errorbar(
                 x, y, yerr=yerr['stat'],
@@ -1213,7 +1222,7 @@ def flow_extra():
                 )
 
                 try:
-                    dset = expt.data[sys][obs][subobs]
+                    dset = exp_data_list[sys][obs][subobs]
                 except KeyError:
                     continue
 
@@ -1367,7 +1376,7 @@ def pca():
     ax_y = fig.add_subplot(gs[1:, -1], sharey=ax_j)
 
     x, y = (
-        model.data['PbPb2760'][obs][subobs]['Y'][:, 3]
+        data_list['PbPb2760'][obs][subobs]['Y'][:, 3]
         for obs, subobs in [('dN_dy', 'pion'), ('vnk', (2, 2))]
     )
     xlabel = r'$dN_{\pi^\pm}/dy$'

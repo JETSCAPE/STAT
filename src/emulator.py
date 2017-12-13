@@ -23,7 +23,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor as GPR
 from sklearn.gaussian_process import kernels
 from sklearn.preprocessing import StandardScaler
 
-from . import cachedir, lazydict, model, observables
+from . import cachedir, lazydict, model, observables, data_list
 from .design import Design
 
 
@@ -74,7 +74,6 @@ class Emulator:
         Y = []
         self._slices = {}
         self.observables = observables 
-        data_list = joblib.load(filename = 'cache/model/main/full_data_dict.p')
         # Build an array of all observables to emulate.
         nobs = 0
         for obs, subobslist in self.observables:

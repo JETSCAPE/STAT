@@ -33,14 +33,12 @@ import h5py
 import numpy as np
 from scipy.linalg import lapack
 from sklearn.externals import joblib
-from . import workdir, systems, observables#, expt
+from . import workdir, systems, observables, exp_data_list, exp_cov#, expt
 from .design import Design
 from .emulator import emulators
 import pickle
 from scipy.stats import multivariate_normal
 
-exp_data_list = joblib.load(filename = 'cache/hepdata/data_list_exp.p')
-exp_cov = joblib.load(filename = 'cache/hepdata/exp_cov.p')
 
 
 def cov(
