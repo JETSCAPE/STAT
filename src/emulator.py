@@ -23,7 +23,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor as GPR
 from sklearn.gaussian_process import kernels
 from sklearn.preprocessing import StandardScaler
 
-from . import cachedir, lazydict, model
+from . import cachedir, lazydict, model, observables
 from .design import Design
 
 
@@ -64,18 +64,6 @@ class Emulator:
     could be tricky.
 
     """
-    #: Observables to emulate as a list of 2-tuples
-    #: ``(obs, [list of subobs])``.
-   # observables = [
-   #     ('dNch_deta', [None]),
-   #     ('dET_deta', [None]),
-   #     ('dN_dy', ['pion', 'kaon', 'proton']),
-   #     ('mean_pT', ['pion', 'kaon', 'proton']),
-   #     ('pT_fluct', [None]),
-   #     ('vnk', [(2, 2), (3, 2), (4, 2)]),
-   # ]
-    #observables = [('R_AA_1',[None]),('R_AA_2',[None])]
-    observables = [('R_AA_2',[None])]
 
     def __init__(self, system, npc=10, nrestarts=0):
         logging.info(
@@ -85,7 +73,7 @@ class Emulator:
 
         Y = []
         self._slices = {}
-   
+        self.observables = observables 
         data_list = joblib.load(filename = 'cache/model/main/full_data_dict.p')
         # Build an array of all observables to emulate.
         nobs = 0
@@ -120,6 +108,7 @@ class Emulator:
        # ptp = maxes - mins
 
         ptp = design.max - design.min
+        print(ptp)
         kernel = (
             1. * kernels.RBF(
                 length_scale=ptp,
@@ -140,6 +129,8 @@ class Emulator:
             ).fit(design, z)
             for z in Z.T
         ]
+        print('Emulator design:')
+        print(design.array)
 
         # Construct the full linear transformation matrix, which is just the PC
         # matrix with the first axis multiplied by the explained standard

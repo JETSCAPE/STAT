@@ -104,7 +104,7 @@ class Design:
     project, if not completely rewritten.
 
     """
-    def __init__(self, system, keys=keys, ranges=ranges,array = design_array, npoints=500, validation=False, seed=None):
+    def __init__(self, system, keys=keys, ranges=ranges,labels=labels, array = design_array, npoints=500, validation=False, seed=None):
         self.system = system
         self.projectiles, self.beam_energy = parse_system(system)
         self.type = 'validation' if validation else 'main'
@@ -192,8 +192,8 @@ class Design:
             )
         else:
             self.array = array
-        print('Design is')
-        print(self.array)
+        #print('Design is')
+        #print(self.array)
         # As it turns out, the minimum for tau_fs (above) was not high
         # enough.  For reasons I don't quite understand, including low
         # tau_fs points in the design messes with GP training, leading to
@@ -315,7 +315,9 @@ class Design:
                 f.write(self._template.format(**kwargs))
                 logging.debug('wrote %s', filepath)
 
-
+    def print_array(self):
+        print('Design is')
+        print(self.array)  
 #def main():
 #    import argparse
 #    from . import systems

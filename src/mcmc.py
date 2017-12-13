@@ -33,12 +33,15 @@ import h5py
 import numpy as np
 from scipy.linalg import lapack
 from sklearn.externals import joblib
-from . import workdir, systems#, expt
+from . import workdir, systems, observables#, expt
 from .design import Design
 from .emulator import emulators
-
+import pickle
+from scipy.stats import multivariate_normal
 
 exp_data_list = joblib.load(filename = 'cache/hepdata/data_list_exp.p')
+exp_cov = joblib.load(filename = 'cache/hepdata/exp_cov.p')
+
 
 def cov(
         system, obs1, subobs1, obs2, subobs2,
@@ -156,7 +159,6 @@ def mvn_loglike(y, cov):
 
     return -.5*np.dot(y, alpha) - np.log(L.diagonal()).sum()
 
-
 class LoggingEnsembleSampler(emcee.EnsembleSampler):
     def run_mcmc(self, X0, nsteps, status=None, **kwargs):
         """
@@ -193,23 +195,6 @@ class Chain:
     system designs have the same parameters and ranges (except for the norms).
 
     """
-   # : Observables to calibrate as a list of 2-tuples
-   # : ``(obs, [list of subobs])``.
-   # : Each observable is checked for each system
-   # : and silently ignored if not found
- #   observables = [
- #       ('dNch_deta', [None]),
- #       ('dET_deta', [None]),
- #       ('dN_dy', ['pion', 'kaon', 'proton']),
- #       ('mean_pT', ['pion', 'kaon', 'proton']),
- #       ('pT_fluct', [None]),
- #       ('vnk', [(2, 2), (3, 2), (4, 2)]),
- #   ]
-
-
-    #observables = [('R_AA_1',[None]),('R_AA_2',[None])]
-    observables = [('R_AA_2',[None])]
-
     def __init__(self, path=workdir / 'mcmc' / 'chain.hdf'):
         self.path = path
         self.path.parent.mkdir(exist_ok=True)
@@ -233,7 +218,6 @@ class Chain:
             yield from klr
 
             #yield 'model_sys_err', r'$\sigma\ \mathrm{model\ sys}$', (0., .4)
-
         self.keys, self.labels, self.range = map(
             list, zip(*keys_labels_range())
         )
@@ -246,7 +230,7 @@ class Chain:
         self._slices = {}
         self._expt_y = {}
         self._expt_cov = {}
-
+        self.observables = observables
         # pre-compute the experimental data vectors and covariance matrices
         for sys, sysdata in exp_data_list.items():
             nobs = 0
@@ -276,11 +260,11 @@ class Chain:
 
             for obs1, subobs1, slc1 in self._slices[sys]:
                 self._expt_y[sys][slc1] = exp_data_list[sys][obs1][subobs1]['y']
-                for obs2, subobs2, slc2 in self._slices[sys]:
-                    self._expt_cov[sys][slc1, slc2] = cov(
-                        sys, obs1, subobs1, obs2, subobs2
-                    )
-        print(self._expt_y)
+                #for obs2, subobs2, slc2 in self._slices[sys]:
+                #    self._expt_cov[sys][slc1, slc2] = cov(
+                #        sys, obs1, subobs1, obs2, subobs2
+                #    )
+            self._expt_cov[sys] = exp_cov
     def _predict(self, X, **kwargs):
         """
         Call each system emulator to predict model output at X.
@@ -288,7 +272,7 @@ class Chain:
         """
         return {
             sys: emulators[sys].predict(
-                X[:, [n] + self._common_indices],
+                X[:, ],#[n] + self._common_indices],
                 **kwargs
             )
             for n, sys in enumerate(systems)
