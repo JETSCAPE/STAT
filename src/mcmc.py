@@ -252,17 +252,18 @@ class Chain:
                         (obs, subobs, slice(nobs, nobs + n))
                     )
                     nobs += n
-            print(nobs)
             self._expt_y[sys] = np.empty(nobs)
             self._expt_cov[sys] = np.empty((nobs, nobs))
 
             for obs1, subobs1, slc1 in self._slices[sys]:
                 self._expt_y[sys][slc1] = exp_data_list[sys][obs1][subobs1]['y']
-                #for obs2, subobs2, slc2 in self._slices[sys]:
-                #    self._expt_cov[sys][slc1, slc2] = cov(
-                #        sys, obs1, subobs1, obs2, subobs2
-                #    )
-            self._expt_cov[sys] = exp_cov
+                for obs2, subobs2, slc2 in self._slices[sys]:
+                    self._expt_cov[sys][slc1, slc2] = cov(
+                        sys, obs1, subobs1, obs2, subobs2
+                    )
+            #Allows user to specify experimental covariance matrix in __init__.py
+            if exp_cov is not None:
+                self._expt_cov[sys] = exp_cov
     def _predict(self, X, **kwargs):
         """
         Call each system emulator to predict model output at X.

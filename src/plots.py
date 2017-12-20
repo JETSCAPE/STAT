@@ -205,7 +205,7 @@ def obs_color_hsluv(obs, subobs):
     if obs in {'dNch_deta', 'pT_fluct'}:
         return 250, 90, 55
 
-    if obs == 'R_AA_2':
+    if obs == 'R_AA':
         return 10, 65, 55
 
     if obs in {'dN_dy', 'mean_pT'}:
@@ -248,7 +248,7 @@ def _observables_plots():
         dict(
             title='RAA',
             ylabel=r'$R_{AA}$',
-            subplots = [('R_AA_2', None, dict())],
+            subplots = [('R_AA', None, dict())],
             ylim = (0,1)
         )
        # dict(
@@ -329,7 +329,7 @@ def _observables(posterior=False):
                 Y = Y*scale
 
             for y in Y:
-                ax.plot(x, y, color=color, alpha=.08, lw=.3)
+                ax.plot(x, y, color=color, alpha=.18, lw=.3)
 
             if 'label' in opts:
                 ax.text(
@@ -1624,7 +1624,7 @@ def validation_all(system='PbPb2760'):
 @plot
 def validation_example(
         system='PbPb5020',
-        obs='R_AA_2', subobs=None,
+        obs='R_AA', subobs=None,
         label=r'$R_{AA2}$',
         cent=(20, 30)
 ):

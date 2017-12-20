@@ -34,8 +34,8 @@ systems = ['PbPb5020']
 #: ranges is list of tuples of (min,max) for each design input
 keys = ['lambda_jet','alpha_s'] #labels in words
 labels = [r'\Lambda_{jet}',r'\alpha_s}'] #labels in LaTeX
-ranges = [(0,1),(0,1)] 
-
+#ranges = [(0,1),(0,1)] 
+ranges = [(0.01,0.3),(0.05,0.35)]
 
 #Design array to use
 #Should be a numpy array
@@ -60,14 +60,15 @@ data_list = joblib.load(filename = 'cache/model/main/full_data_dict.p')
 exp_data_list = joblib.load(filename = 'cache/hepdata/data_list_exp.p')
 
 
-#Experimental covariance matrix
-exp_cov = joblib.load(filename = 'cache/hepdata/exp_cov.p')
-
+##Experimental covariance matrix
+##Set exp_cov = None to have the script estimate the covariance matrix
+exp_cov = joblib.load(filename = 'cache/hepdata/cov_exp_pbpb5020_30_50.p')
+#exp_cov = None
 
 
 #: Observables to emulate as a list of 2-tuples
 #: ``(obs, [list of subobs])``.
-observables = [('R_AA_2',[None])]
+observables = [('R_AA',[None])]
 
 def parse_system(system):
     """
