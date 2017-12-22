@@ -18,34 +18,34 @@ Source code: :ghlink:`src/__init__.py`
 
 .. autofunction:: parse_system
 
-Experimental data
------------------
-Source code: :ghlink:`src/expt.py`
-
-.. automodule:: src.expt
-
-.. autoclass:: HEPData
-   :members:
-
-.. autofunction:: _data
-
-.. autodata:: data
-   :annotation: = <nested dict object>
-
-.. autofunction:: cov
-
-Model data
-----------
-Source code: :ghlink:`src/model.py`
-
-.. automodule:: src.model
-
-.. autoclass:: ModelData
-   :members:
-
-.. data:: data
-
-   A nested dict of model data with the same structure as :data:`src.expt.data`.
+#Experimental data
+#-----------------
+#Source code: :ghlink:`src/expt.py`
+#
+#.. automodule:: src.expt
+#
+#.. autoclass:: HEPData
+#   :members:
+#
+#.. autofunction:: _data
+#
+#.. autodata:: data
+#   :annotation: = <nested dict object>
+#
+#.. autofunction:: cov
+#
+#Model data
+#----------
+#Source code: :ghlink:`src/model.py`
+#
+#.. automodule:: src.model
+#
+#.. autoclass:: ModelData
+#   :members:
+#
+#.. data:: data
+#
+#   A nested dict of model data with the same structure as :data:`src.expt.data`.
 
 Design
 ------

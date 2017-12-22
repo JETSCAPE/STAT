@@ -13,14 +13,14 @@ os.environ['WORKDIR'] = pardir
 
 project = 'hic-param-est'
 version = release = ''
-author = 'Jonah Bernhard'
+author = 'Jonah Bernhard, Jake Coleman'
 copyright = '{} {}'.format(datetime.date.today().year, author)
 
 source_suffix = '.rst'
 master_doc = 'index'
 
 templates_path = ['_templates']
-html_static_path = ['_static']
+#html_static_path = ['_static']
 exclude_patterns = ['_build']
 
 default_role = 'py:obj'
@@ -41,7 +41,7 @@ extensions = [
 
 autodoc_member_order = 'bysource'
 
-github_url = 'https://github.com/jbernhard/hic-param-est-2017/blob/master/'
+github_url = 'https://github.com/jake-coleman32/hic-param-est-2017'
 
 extlinks = {
     'ghlink': (github_url + '%s', '')
