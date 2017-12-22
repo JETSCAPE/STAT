@@ -8,6 +8,7 @@ import sys
 
 pardir = os.path.abspath(os.pardir)
 sys.path.insert(1, pardir)
+sys.path.insert(0, os.path.abspath('../')) #Suggestion to make readthedocs work
 # so existing cache directory is used when src is imported
 os.environ['WORKDIR'] = pardir
 
@@ -20,7 +21,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 templates_path = ['_templates']
-#html_static_path = ['_static']
+html_static_path = ['_static']
 exclude_patterns = ['_build']
 
 default_role = 'py:obj'
