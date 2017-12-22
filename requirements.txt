@@ -5,4 +5,5 @@ numpy
 PyYAML
 scikit-learn >= 0.18
 scipy
+pandas
 pathlib
