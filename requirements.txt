@@ -4,4 +4,5 @@ hic
 numpy
 PyYAML
 scikit-learn >= 0.18
+scipy
 pathlib
