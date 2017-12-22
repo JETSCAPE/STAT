@@ -8,3 +8,4 @@ scipy
 pandas
 pathlib
 hsluv
+matplotlib
