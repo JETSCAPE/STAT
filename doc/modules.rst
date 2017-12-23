@@ -16,6 +16,18 @@ Source code: :ghlink:`src/__init__.py`
 
 .. autodata:: systems
 
+.. autodata:: keys
+
+.. autodata:: design_array
+
+.. autodata:: data_list
+
+.. autodata:: exp_data_list
+
+.. autodata:: exp_cov
+
+.. autodata:: observables
+
 .. autofunction:: parse_system
 
 Design
