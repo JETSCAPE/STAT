@@ -37,32 +37,29 @@ labels = [r'\Lambda_{jet}',r'\alpha_s}'] #labels in LaTeX
 #ranges = [(0,1),(0,1)] 
 ranges = [(0.01,0.3),(0.05,0.35)]
 
-#Design array to use
-#Should be a numpy array
-#If you want to generate a Latin Hypercube with a specific range, set this to None
+#: Design array to use
+#: Should be a numpy array
+#: If you want to generate a Latin Hypercube with a specific range, set this to None
 design_array = pickle.load((cachedir / 'lhs/design_s.p').open('rb'))
 
 
-#Dictionary of the model output
-#Form MUST be data_list_loaded[system][observable][subobservable][{'Y','x'}]
-###Note - 'Y' is an (n x p) numpy array of the output
-###       'x' is a (1 x p) numpy array of numeric index of columns of Y (if exists). p_T in example below
-#data_list = joblib.load(filename = 'cache/model/main/full_data_dict.p')
+#: Dictionary of the model output
+#: Form MUST be data_list[system][observable][subobservable][{'Y','x'}]
+#: Note - 'Y' is an (n x p) numpy array of the output
+#:        'x' is a (1 x p) numpy array of numeric index of columns of Y (if exists). p_T in example below
 data_list = pickle.load((cachedir / 'model/main/full_data_dict.p').open('rb'))
 
-#Dictionary of the experimental data
-#Form MUST be exp_data_list[system][observable][subobservable][{'y':,'x':,'yerr':{'stat':,'sys'}}]
-###Note - 'y' is a (1 x p) numpy array of experimental data 
-###       'x' is a (1 x p) numpy array of numeric index of columns of Y (if exists). p_T in example below
-###       'yerr' is a dictionary with keys 'stat' and 'sys'
-###       'stat' is a (1 x p) array of statistical errors
-###       'sys' is a (1 x p) array of systematic errors
-#exp_data_list = joblib.load(filename = 'cache/hepdata/data_list_exp.p')
+#: Dictionary of the experimental data
+#: Form MUST be exp_data_list[system][observable][subobservable][{'y':,'x':,'yerr':{'stat':,'sys'}}]
+#: Note - 'y' is a (1 x p) numpy array of experimental data 
+#:        'x' is a (1 x p) numpy array of numeric index of columns of Y (if exists). p_T in example below
+#:        'yerr' is a dictionary with keys 'stat' and 'sys'
+#:        'stat' is a (1 x p) array of statistical errors
+#:        'sys' is a (1 x p) array of systematic errors
 exp_data_list = pickle.load((cachedir / 'hepdata/data_list_exp.p').open('rb'))
 
-##Experimental covariance matrix
-##Set exp_cov = None to have the script estimate the covariance matrix
-#exp_cov = joblib.load(filename = 'cache/hepdata/cov_exp_pbpb5020_30_50.p')
+#: Experimental covariance matrix
+#: Set exp_cov = None to have the script estimate the covariance matrix
 exp_cov = pickle.load((cachedir / 'hepdata/cov_exp_pbpb5020_30_50.p').open('rb'))
 #exp_cov = None
 

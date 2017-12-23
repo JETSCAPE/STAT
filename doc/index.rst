@@ -10,6 +10,12 @@ Bayesian parameter estimation for relativistic heavy-ion collisions
 .. contents:: Outline
    :local:
 
+
+Acknowledgement
+---------------
+This package is a forked version, originally written by Jonah Bernhard. Users can access the original code at his `github repository<https://github.com/jbernhard/hic-param-est-2017>`_, along with the `original documentation <http://qcd.phy.duke.edu/hic-param-est/>`_. The main purpose of this package is to accommodate a wider array of parameter estimation problems and most changes to the code are for increased flexibility in design, model input, and model output. However, users are still expected to possess a solid grasp on Bayesian parameter estimation so that modeling assumptions specific to their project may be incorporated. The remainder of this page was written by Jonah (with hyperlinks updated to this version of the package), and remain relevant for users considering using this package.
+
+
 Design philosophy
 -----------------
 As Bayesian parameter estimation becomes more common in heavy-ion physics, we need an analysis package to facilitate these projects and reduce duplication of effort.
@@ -25,7 +31,7 @@ Parameter estimation projects should build on previous work, adding and modifyin
 
 What is this document?
 ----------------------
-A brief guide to https://github.com/jbernhard/hic-param-est-2017, which is the code for my latest project applying Bayesian parameter estimation to quantify properties of the quark-gluon plasma.
+A brief guide to https://github.com/jake-coleman32/hic-param-est-2017, which is a forked and modified version of https://github.com/jbernhard/hic-param-est-2017.
 
 I have made an effort to keep the code as generic possible so that it may be easily modified for similar projects.
 Users should `fork <https://help.github.com/articles/fork-a-repo/>`_ the repository and adapt it for their needs.
@@ -40,10 +46,10 @@ Most of the computation time in this analysis is occupied by linear algebra func
 
 Some Linux distributions (e.g. Arch Linux) provide the required Python packages with an optimized linear algebra library, in which case Miniconda is not necessary.
 
-The dependencies are listed in the repository's `requirements.txt <https://github.com/jbernhard/hic-param-est-2017/blob/master/requirements.txt>`_.
+The dependencies are listed in the repository's `requirements.txt <https://github.com/jake-coleman32/hic-param-est-2017/blob/master/requirements.txt>`_.
 If you're using Miniconda, create and activate an environment with the dependencies::
 
-   conda create -n hic-param-est numpy h5py scikit-learn pyyaml
+   conda create -n hic-param-est numpy h5py scikit-learn pyyaml pathlib
    source activate hic-param-est
 
 Install a few additional dependencies that do not have conda packages::
@@ -53,7 +59,7 @@ Install a few additional dependencies that do not have conda packages::
 `emcee <http://dfm.io/emcee>`_ is used for MCMC sampling.
 `hic <http://qcd.phy.duke.edu/hic>`_ is my library for heavy-ion collision simulation analysis, used in this project for computing flow cumulants.
 
-Now, fork the `Github repository <https://github.com/jbernhard/hic-param-est-2017>`_ and clone your fork.
+Now, fork the `Github repository <https://github.com/jake-coleman32/hic-param-est-2017>`_ and clone your fork.
 
 Usage
 -----
@@ -63,9 +69,9 @@ In the Python lexicon, each file in ``src`` is a `module <https://docs.python.or
 Each module is designed to be executed as a script.
 Since the modules import each other, and due to the way Python intra-package references work, they must be executed using their fully-qualified module names and the ``-m`` option to the Python interpreter, e.g.::
 
-   python -m src.expt
+   python -m src.emulator
 
-to run the :mod:`expt` module.
+to run the :mod:`emulator` module.
 Commands should be run in the directory containing ``src``, i.e. the project root directory.
 
 Modules
