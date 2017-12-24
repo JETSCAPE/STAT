@@ -29,15 +29,18 @@ systems = ['PbPb5020']
 
 
 #: Design attribute. This is a list of 
-#: strings describing the inputs
+#: strings describing the inputs.
+#: The default is for the example data.
 keys = ['lambda_jet','alpha_s'] #labels in words
 
 #: Design attribute. This is a list of input
-#: labels in LaTeX for plotting 
+#: labels in LaTeX for plotting.
+#: The default is for the example data. 
 labels = [r'\Lambda_{jet}',r'\alpha_s}'] #labels in LaTeX
 
 #: Design attribute. This is list of tuples of 
-#: (min,max) for each design input
+#: (min,max) for each design input.
+#: The default is for the example data.
 ranges = [(0.01,0.3),(0.05,0.35)]
 #ranges = [(0,1),(0,1)] 
 

@@ -18,6 +18,10 @@ Source code: :ghlink:`src/__init__.py`
 
 .. autodata:: keys
 
+.. autodata:: labels
+
+.. autodata:: ranges
+
 .. autodata:: design_array
 
 .. autodata:: data_list
