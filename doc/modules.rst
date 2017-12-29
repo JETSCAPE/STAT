@@ -71,3 +71,19 @@ Plots and figures
 Source code: :ghlink:`src/plots.py`
 
 .. automodule:: src.plots
+
+.. autofunction:: posterior
+
+.. autofunction:: observables_design
+
+.. autofunction:: observables_posterior
+
+.. autofunction:: diag_emu
+
+.. autofunction:: design
+
+.. autofunction:: gp
+
+.. autofunction:: flow_corr
+
+.. autofunction:: format_system

@@ -42,14 +42,12 @@ labels = [r'\Lambda_{jet}',r'\alpha_s}'] #labels in LaTeX
 #: (min,max) for each design input.
 #: The default is for the example data.
 ranges = [(0.01,0.3),(0.05,0.35)]
-#ranges = [(0,1),(0,1)] 
 
 #: Design array to use - should be a numpy array.
 #: Keep at None generate a Latin Hypercube with above (specified) range.
 #: Design array for example is commented under default.
-design_array = None
-#design_array = pickle.load((cachedir / 'lhs/design_s.p').open('rb'))
-
+#design_array = None
+design_array = pickle.load((cachedir / 'lhs/design_s.p').open('rb'))
 
 #: Dictionary of the model output.
 #: Form MUST be data_list[system][observable][subobservable][{'Y': ,'x': }].
@@ -59,6 +57,10 @@ design_array = None
 #: This MUST be changed from None - no built-in default exists. Uncomment the line below default for example.
 data_list = None
 #data_list = pickle.load((cachedir / 'model/main/full_data_dict.p').open('rb'))
+
+#: Dictionary for the model validation output
+#: Must be the same for as the model output dictionary
+data_list_val = pickle.load((cachedir / 'model/validation/data_dict_val.p').open('rb'))
 
 #: Dictionary of the experimental data.
 #: Form MUST be exp_data_list[system][observable][subobservable][{'y':,'x':,'yerr':{'stat':,'sys'}}].

@@ -39,10 +39,12 @@ from sklearn.gaussian_process import GaussianProcessRegressor as GPR
 from sklearn.gaussian_process import kernels
 from sklearn.mixture import GaussianMixture
 
-from . import workdir, systems, parse_system, mcmc, data_list, exp_data_list#, model, expt
+from . import workdir, systems, parse_system, mcmc, data_list, exp_data_list, data_list_val#, model, expt
 from .design import Design
 from .emulator import emulators
 
+
+default_system = systems[0]
 
 fontsmall, fontnormal, fontlarge = 5, 6, 7
 offblack = '#262626'
@@ -244,9 +246,12 @@ def _observables_plots():
             ('pion', '$\pi$'), ('kaon', '$K$'), ('proton', '$p$')
         ]]
 
+    #################
+    ###Change this manually for own observables
+    ###################
     return [
         dict(
-            title='RAA',
+            title='R_AA',
             ylabel=r'$R_{AA}$',
             subplots = [('R_AA', None, dict())],
             ylim = (0,1)
@@ -390,15 +395,27 @@ def _observables(posterior=False):
 
 @plot
 def observables_design():
+    """
+    Model observables at design points, with experimental data plotted as reference.
+    For different observables than the example, change the dictionary in
+    _observables_plot()
+
+    """
     _observables(posterior=False)
 
 
 @plot
 def observables_posterior():
+    """
+    Model observables at 100 draws from the posterior, with experimental data plotted as reference.
+    For different observables than the example, change the dictionary in
+    _observables_plot()
+
+    """
     _observables(posterior=True)
 
 
-@plot
+#@plot
 def observables_map():
     """
     Model observables and ratio to experiment at the maximum a posteriori
@@ -551,7 +568,7 @@ def observables_map():
     set_tight(fig)
 
 
-@plot
+#@plot
 def find_map():
     """
     Find the maximum a posteriori (MAP) point and compare emulator predictions
@@ -824,10 +841,16 @@ def _posterior(
 
 @plot
 def posterior():
+    """
+    Pairplot of posteriors for all calibration inputs.
+    Diagonal displays marginal density.
+    Lower off-diagonal displays pairwise scatter plot.
+
+    """
     _posterior(ignore={'etas_hrg'}, scale=1.6, padr=1., padt=.99)
 
 
-@plot
+#@plot
 def posterior_shear():
     _posterior(
         scale=.35, padt=.96, padr=1.,
@@ -835,7 +858,7 @@ def posterior_shear():
     )
 
 
-@plot
+#@plot
 def posterior_bulk():
     _posterior(
         scale=.3, padt=.96, padr=1.,
@@ -843,7 +866,7 @@ def posterior_bulk():
     )
 
 
-@plot
+#@plot
 def posterior_p():
     """
     Distribution of trento p parameter with annotations for other models.
@@ -979,17 +1002,17 @@ def _region_shear(mode='full', scale=.6):
     ]), loc='upper left', bbox_to_anchor=(0, 1.03))
 
 
-@plot
+#@plot
 def region_shear():
     _region_shear()
 
 
-@plot
+#@plot
 def region_shear_empty():
     _region_shear('empty')
 
 
-@plot
+#@plot
 def region_shear_examples():
     _region_shear('examples', scale=.5)
 
@@ -1067,22 +1090,22 @@ def _region_bulk(mode='full', scale=.6):
     ax.legend(loc='upper left')
 
 
-@plot
+#@plot
 def region_bulk():
     _region_bulk()
 
 
-@plot
+#@plot
 def region_bulk_empty():
     _region_bulk('empty')
 
 
-@plot
+#@plot
 def region_bulk_examples():
     _region_bulk('examples', scale=.5)
 
 
-@plot
+#@plot
 def flow_corr():
     """
     Symmetric cumulants SC(m, n) at the MAP point compared to experiment.
@@ -1185,7 +1208,7 @@ def flow_corr():
             ax.set_xlabel('Centrality %')
 
 
-@plot
+#@plot
 def flow_extra():
     """
     vn{2} in central bins and v2{4}.
@@ -1261,6 +1284,8 @@ def flow_extra():
 def design():
     """
     Projection of a LH design into two dimensions.
+    Change keys within the function to the two inputs you want to
+    protect into.
 
     """
     fig = plt.figure(figsize=(.5*textwidth, .5*textwidth))
@@ -1273,7 +1298,10 @@ def design():
 
     d = Design(systems[0])
 
-    keys = ('etas_min', 'etas_slope')
+    #############
+    ###Change this to own keys
+    #############
+    keys = ('lambda_jet', 'alpha_s')
     indices = tuple(d.keys.index(k) for k in keys)
 
     x, y = (d.array[:, i] for i in indices)
@@ -1309,6 +1337,7 @@ def design():
 def gp():
     """
     Conditioning a Gaussian process.
+    Simple example plots with dummy data.
 
     """
     fig, axes = plt.subplots(
@@ -1365,7 +1394,7 @@ def gp():
     set_tight(fig, h_pad=1)
 
 
-@plot
+#@plot
 def pca():
     fig = plt.figure(figsize=(.45*textwidth, .45*textwidth))
     ratio = 5
@@ -1376,8 +1405,8 @@ def pca():
     ax_y = fig.add_subplot(gs[1:, -1], sharey=ax_j)
 
     x, y = (
-        data_list['PbPb2760'][obs][subobs]['Y'][:, 3]
-        for obs, subobs in [('dN_dy', 'pion'), ('vnk', (2, 2))]
+        data_list[systems[0]][obs][subobs]['Y'][:, 3]
+        for obs, subobs in [('R_AA', None), ('R_AA', None)]
     )
     xlabel = r'$dN_{\pi^\pm}/dy$'
     ylabel = r'$v_2\{2\}$'
@@ -1448,7 +1477,7 @@ def pca():
     set_tight(pad=.1, h_pad=.3, w_pad=.3)
 
 
-@plot
+#@plot
 def trento_events():
     """
     Random trento events.
@@ -1518,8 +1547,8 @@ def boxplot(
         )
 
 
-@plot
-def validation_all(system='PbPb2760'):
+#@plot
+def validation_all(system='PbPb5020'):
     """
     Emulator validation: normalized residuals and RMS error for each
     observable.
@@ -1534,7 +1563,7 @@ def validation_all(system='PbPb2760'):
     ticks = []
     ticklabels = []
 
-    vdata = model.validation_data[system]
+    vdata = data_list_val[system]
     emu = emulators[system]
     mean, cov = emu.predict(
         Design(system, validation=True).array,
@@ -1621,7 +1650,7 @@ def validation_all(system='PbPb2760'):
         ax.spines['bottom'].set_visible(False)
 
 
-@plot
+#@plot
 def validation_example(
         system='PbPb5020',
         obs='R_AA', subobs=None,
@@ -1641,7 +1670,6 @@ def validation_example(
 
     ax_scatter, ax_hist = axes
 
-    data_list_val = joblib.load(filename = 'cache/model/validation/data_dict_val.p')
     vdata = data_list_val[system][obs][subobs]
     cent_slc = (slice(None), vdata['cent'].index(cent))
     y = vdata['Y'][cent_slc]
@@ -1726,10 +1754,9 @@ def validation_example(
     )
 
 
-default_system = 'PbPb2760'
 
 
-@plot
+#@plot
 def diag_pca(system=default_system):
     """
     Diagnostic: histograms of principal components and scatterplots of pairs.
@@ -1764,6 +1791,8 @@ def diag_emu(system=default_system):
     """
     Diagnostic: plots of each principal component vs each input parameter,
     overlaid by emulator predictions at several points in design space.
+    See how well the emulators track the design points, if uncertainty
+    and shape of predictions are reasonable.
 
     """
     gps = emulators[system].gps
