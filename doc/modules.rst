@@ -84,6 +84,3 @@ Source code: :ghlink:`src/plots.py`
 
 .. autofunction:: gp
 
-.. autofunction:: flow_corr
-
-.. autofunction:: format_system

@@ -38,8 +38,9 @@ from sklearn.decomposition import PCA
 from sklearn.gaussian_process import GaussianProcessRegressor as GPR
 from sklearn.gaussian_process import kernels
 from sklearn.mixture import GaussianMixture
+from functools import wraps
 
-from . import workdir, systems, parse_system, mcmc, data_list, exp_data_list, data_list_val#, model, expt
+from . import workdir, systems, parse_system, mcmc, data_list, exp_data_list#, data_list_val#, model, expt
 from .design import Design
 from .emulator import emulators
 
@@ -118,6 +119,7 @@ def plot(f):
     and saves the figure as the function name.
 
     """
+    @wraps(f)
     def wrapper(*args, **kwargs):
         logging.info('generating plot: %s', f.__name__)
         f(*args, **kwargs)
