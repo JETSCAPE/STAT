@@ -60,7 +60,8 @@ data_list = None
 
 #: Dictionary for the model validation output
 #: Must be the same for as the model output dictionary
-data_list_val = pickle.load((cachedir / 'model/validation/data_dict_val.p').open('rb'))
+#data_list_val = pickle.load((cachedir / 'model/validation/data_dict_val.p').open('rb'))
+data_list = None
 
 #: Dictionary of the experimental data.
 #: Form MUST be exp_data_list[system][observable][subobservable][{'y':,'x':,'yerr':{'stat':,'sys'}}].
