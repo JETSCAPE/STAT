@@ -13,7 +13,7 @@ Bayesian parameter estimation for relativistic heavy-ion collisions
 
 Acknowledgement
 ---------------
-This package is a forked version, originally written by Jonah Bernhard. Users can access the original code at his `github repository <https://github.com/jbernhard/hic-param-est-2017>`_, along with the `original documentation <http://qcd.phy.duke.edu/hic-param-est/>`_. The main purpose of this package is to accommodate a wider array of parameter estimation problems and most changes to the code are for increased flexibility in design, model input, and model output. However, users are still expected to possess a solid grasp on Bayesian parameter estimation so that modeling assumptions specific to their project may be incorporated. The remainder of this page was written by Jonah (with hyperlinks updated to this version of the package), and remain relevant for users considering using this package.
+This package is a forked version, originally written by Jonah Bernhard. Users can access the original code at his `github repository <https://github.com/jbernhard/hic-param-est-2017>`_, along with the `original documentation <http://qcd.phy.duke.edu/hic-param-est/>`_. The main purpose of this package is to more easily accommodate a wider array of parameter estimation problems -  most changes to the code are for more centralized flexibility in design, model output, and experimental data. However, users are still expected to possess a solid grasp on Bayesian parameter estimation so that modeling assumptions specific to their project may be incorporated. The remainder of this page was written by Jonah (with hyperlinks updated to this version of the package), and remain relevant for users considering using this package.
 
 
 Design philosophy
