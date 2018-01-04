@@ -46,8 +46,8 @@ ranges = [(0.01,0.3),(0.05,0.35)]
 #: Design array to use - should be a numpy array.
 #: Keep at None generate a Latin Hypercube with above (specified) range.
 #: Design array for example is commented under default.
-#design_array = None
-design_array = pickle.load((cachedir / 'lhs/design_s.p').open('rb'))
+design_array = None
+#design_array = pickle.load((cachedir / 'lhs/design_s.p').open('rb'))
 
 #: Dictionary of the model output.
 #: Form MUST be data_list[system][observable][subobservable][{'Y': ,'x': }].
