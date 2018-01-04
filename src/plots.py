@@ -311,9 +311,10 @@ def _observables(posterior=False):
             height_ratios=[p.get('height_ratio', 1) for p in plots]
         )
     )
-
+    alpha_val = 1
     if posterior:
         samples = mcmc.Chain().samples(100)
+        alpha_val = 0.3
 
     if len(systems)==1 & len(plots)==1:
        axes = np.array(axes) 
@@ -336,7 +337,7 @@ def _observables(posterior=False):
                 Y = Y*scale
 
             for y in Y:
-                ax.plot(x, y, color=color, alpha=.18, lw=.3)
+                ax.plot(x, y, color=color, alpha=alpha_val, lw=.3)
 
             if 'label' in opts:
                 ax.text(
