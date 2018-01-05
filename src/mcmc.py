@@ -277,7 +277,7 @@ class Chain:
             for n, sys in enumerate(systems)
         }
 
-    def log_posterior(self, X, extra_std_prior_scale=0):
+    def log_posterior(self, X, extra_std_prior_scale=0.05, model_sys_error = False):
         """
         Evaluate the posterior at `X`.
 
@@ -286,6 +286,8 @@ class Chain:
 
             prior ~ sigma^2 * exp(-sigma/scale)
 
+        This model sys error parameter is not by default implemented.
+        
         """
         X = np.array(X, copy=False, ndmin=2)
 
@@ -297,8 +299,11 @@ class Chain:
         nsamples = np.count_nonzero(inside)
 
         if nsamples > 0:
-            #extra_std = X[inside, -1]
-            extra_std = 0.0
+            if model_sys_error:
+                extra_std = X[inside, -1]
+            else:
+                extra_std = 0.0
+
             pred = self._predict(
                 X[inside], return_cov=True, extra_std=extra_std
             )
@@ -328,7 +333,8 @@ class Chain:
                 lp[inside] += list(map(mvn_loglike, dY, cov))
 
             # add prior for extra_std (model sys error)
-            #lp[inside] += 2*np.log(extra_std) - extra_std/extra_std_prior_scale
+            if model_sys_error:
+                lp[inside] += 2*np.log(extra_std) - extra_std/extra_std_prior_scale
 
         return lp
 
