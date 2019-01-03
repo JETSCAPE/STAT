@@ -20,7 +20,7 @@ You are also encouraged to explore the documentation of the [scikit-learn](https
 Installation
 ------------
 
-1. Install Miniconda for Python 3.6 by following the [Regular Installation instructions] (https://conda.io/docs/user-guide/install/index.html)
+1. Install Miniconda for Python 3.6 by following the [Regular Installation instructions](https://conda.io/docs/user-guide/install/index.html)
 
 2. If you don't have R, download R from [here] https://cran.cnr.berkeley.edu/
 
