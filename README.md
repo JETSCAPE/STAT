@@ -13,7 +13,7 @@ Please do the following prior to the first school working session, to enable us 
 Get start with Python and Machine Learning
 ------------------------------------------
 
-This is the version tailored for the JetScape Winter School 2019. It is writen in Python 3. For scientific computing with Python, we recommand reading the Scipy Lecture Notes available online [](https://www.scipy-lectures.org/), especially section 1.3 NumPy and 1.4 Matplotlib for array manipulations and plotting functions.
+This is the version tailored for the JetScape Winter School 2019. It is writen in Python 3. For scientific computing with Python, we recommand reading the Scipy Lecture Notes available [online](https://www.scipy-lectures.org/), especially section 1.3 NumPy and 1.4 Matplotlib for array manipulations and plotting functions.
 You are also encouraged to explore the documentation of the [scikit-learn](https://scikit-learn.org/stable/) library for Machine Learning in Python.
 
 
@@ -28,7 +28,7 @@ Installation
 
 4. In the R console, type the command `install.packages('lhs')` and pick an appropriate download mirror if prompted. To ensure the package was properly installed, type `library(lhs)` in the R console. If that command runs without error, the package is installed. Close the R console by typing `quit()`.
 
-5. Clone the git repository with branch `WS2018` from [](https://github.com/keweiyao/hic-param-est-2017) by `git clone -b WS2018 https://github.com/keweiyao/hic-param-est-2017`
+5. Clone the git repository with branch `WS2018` from [here](https://github.com/keweiyao/hic-param-est-2017) by `git clone -b WS2018 https://github.com/keweiyao/hic-param-est-2017`
 
 6. Open Terminal (OSX, Linux) or Windows Command Prompt (Windows).
 
