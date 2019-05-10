@@ -73,7 +73,7 @@ class Emulator:
 
         Y = []
         self._slices = {}
-        self.observables = observables 
+        self.observables = observables
         # Build an array of all observables to emulate.
         nobs = 0
         for obs, subobslist in self.observables:
@@ -109,7 +109,7 @@ class Emulator:
         ptp = design.max - design.min
         print(ptp)
         kernel = (
-            1. * kernels.RBF(
+            1. * kernels.Matern(
                 length_scale=ptp,
                 length_scale_bounds=np.outer(ptp, (.1, 10))
             ) +

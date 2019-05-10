@@ -19,35 +19,35 @@ workdir = Path(os.getenv('WORKDIR', '.'))
 cachedir = workdir / 'cache'
 cachedir.mkdir(parents=True, exist_ok=True)
 
-AllData = pickle.load((workdir / 'input/default.p').open('rb'))
-
 #: Sets the collision systems for the entire project,
 #: where each system is a string of the form
 #: ``'<projectile 1><projectile 2><beam energy in GeV>'``,
 #: such as ``'PbPb2760'``, ``'AuAu200'``, ``'pPb5020'``.
 #: Even if the project uses only a single system,
 #: this should still be a list of one system string.
-systems = AllData["systems"]
+systems = ['PbPb5020']
+
 
 #: Design attribute. This is a list of
 #: strings describing the inputs.
 #: The default is for the example data.
-keys = AllData["keys"]
+keys = ['lambda_jet','alpha_s'] #labels in words
 
 #: Design attribute. This is a list of input
 #: labels in LaTeX for plotting.
 #: The default is for the example data.
-labels = AllData["labels"]
+labels = [r'\Lambda_{jet}',r'\alpha_s}'] #labels in LaTeX
 
 #: Design attribute. This is list of tuples of
 #: (min,max) for each design input.
 #: The default is for the example data.
-ranges = AllData["ranges"]
+ranges = [(0.01,0.3),(0.05,0.35)]
 
 #: Design array to use - should be a numpy array.
 #: Keep at None generate a Latin Hypercube with above (specified) range.
 #: Design array for example is commented under default.
-design_array = AllData["design"]
+design_array = None
+#design_array = pickle.load((cachedir / 'lhs/design_s.p').open('rb'))
 
 #: Dictionary of the model output.
 #: Form MUST be data_list[system][observable][subobservable][{'Y': ,'x': }].
@@ -55,7 +55,8 @@ design_array = AllData["design"]
 #:
 #:     'x' is a (1 x p) numpy array of numeric index of columns of Y (if exists). In the example data, x is p_T.
 #: This MUST be changed from None - no built-in default exists. Uncomment the line below default for example.
-data_list = AllData["model"]
+data_list = None
+#data_list = pickle.load((cachedir / 'model/main/full_data_dict.p').open('rb'))
 
 #: Dictionary for the model validation output
 #: Must be the same for as the model output dictionary
@@ -74,17 +75,19 @@ data_list_val = None
 #:
 #:      'sys' is a (1 x p) array of systematic errors.
 #: This MUST be changed from None - no built-in default exists. Uncomment the line below default for example.
-exp_data_list = AllData["data"]
+exp_data_list = None
+#exp_data_list = pickle.load((cachedir / 'hepdata/data_list_exp.p').open('rb'))
 
 #: Experimental covariance matrix.
 #: Set exp_cov = None to have the script estimate the covariance matrix.
 #: Example commented below default.
-exp_cov = AllData["cov"]
+exp_cov = None
+#exp_cov = pickle.load((cachedir / 'hepdata/cov_exp_pbpb5020_30_50.p').open('rb'))
 
 
 #: Observables to emulate as a list of 2-tuples
 #: ``(obs, [list of subobs])``.
-observables = AllData["observables"]
+observables = [('R_AA',[None])]
 
 def parse_system(system):
     """

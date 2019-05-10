@@ -201,6 +201,7 @@ class Chain:
         #  - normalizations (one for each system)
         #  - all other physical parameters (same for all systems)
         #  - model sys error
+        """
         def keys_labels_range():
             for sys in systems:
                 d = Design(sys)
@@ -214,12 +215,18 @@ class Chain:
                 )
 
             yield from klr
+        """
+
+        def keys_labels_range():
+            d = Design(systems[0])
+            klr = zip(d.keys, d.labels, d.range)
+
+            yield from klr
 
             #yield 'model_sys_err', r'$\sigma\ \mathrm{model\ sys}$', (0., .4)
-        self.keys, self.labels, self.range = map(
-            list, zip(*keys_labels_range())
-        )
+        self.keys, self.labels, self.range = map(list, zip(*keys_labels_range()))
 
+        # print(self.range)
         self.ndim = len(self.range)
         self.min, self.max = map(np.array, zip(*self.range))
 
@@ -252,18 +259,25 @@ class Chain:
                         (obs, subobs, slice(nobs, nobs + n))
                     )
                     nobs += n
-            self._expt_y[sys] = np.empty(nobs)
-            self._expt_cov[sys] = np.empty((nobs, nobs))
+            self._expt_y[sys] = np.zeros(nobs)
+            self._expt_cov[sys] = np.zeros((nobs, nobs))
 
             for obs1, subobs1, slc1 in self._slices[sys]:
                 self._expt_y[sys][slc1] = exp_data_list[sys][obs1][subobs1]['y']
-                for obs2, subobs2, slc2 in self._slices[sys]:
-                    self._expt_cov[sys][slc1, slc2] = cov(
-                        sys, obs1, subobs1, obs2, subobs2
-                    )
+                if exp_cov is None:
+                    for obs2, subobs2, slc2 in self._slices[sys]:
+                        self._expt_cov[sys][slc1, slc2] = cov(
+                            sys, obs1, subobs1, obs2, subobs2
+                        )
+
             #Allows user to specify experimental covariance matrix in __init__.py
             if exp_cov is not None:
-                self._expt_cov[sys] = exp_cov
+                for obs, subobs, slc in self._slices[sys]:
+                    n = exp_cov[sys][obs][subobs].shape[0]
+                    self._expt_cov[sys][slc, slc] = exp_cov[sys][obs][subobs]
+
+            # print(self._expt_y[sys])
+            # print(self._expt_cov[sys])
     def _predict(self, X, **kwargs):
         """
         Call each system emulator to predict model output at X.
@@ -287,7 +301,7 @@ class Chain:
             prior ~ sigma^2 * exp(-sigma/scale)
 
         This model sys error parameter is not by default implemented.
-        
+
         """
         X = np.array(X, copy=False, ndmin=2)
 
@@ -320,8 +334,7 @@ class Chain:
                 for obs1, subobs1, slc1 in self._slices[sys]:
                     dY[:, slc1] = model_Y[obs1][subobs1]
                     for obs2, subobs2, slc2 in self._slices[sys]:
-                        cov[:, slc1, slc2] = \
-                            model_cov[(obs1, subobs1), (obs2, subobs2)]
+                        cov[:, slc1, slc2] = model_cov[(obs1, subobs1), (obs2, subobs2)]
 
                 # subtract expt data from model data
                 dY -= self._expt_y[sys]

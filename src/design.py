@@ -108,7 +108,7 @@ class Design:
         self.system = system
         self.projectiles, self.beam_energy = parse_system(system)
         self.type = 'validation' if validation else 'main'
-        
+
         self.keys = keys
         self.range = ranges
 
@@ -141,7 +141,7 @@ class Design:
         #   - escape spaces
         #   - surround with $$
         self.labels = [
-            re.sub(r'({[A-Za-z]+})', r'\mathrm\1', i)
+            re.sub(r'({[A-Za-z]+})', r'\\mathrm\\1', i)
             .replace(' ', r'\ ')
             .join('$$')
             for i in labels
@@ -166,7 +166,7 @@ class Design:
         #
         # As a result, I decided to re-run with the slope uniform in (0, 8),
         # and use the old design for validation.
- 
+
         # While working with the original design data, I noticed that very
         # small tau_fs values were problematic, presumably due to numerical
         # issues (dividing by a small number, large initial energy densities,
@@ -317,7 +317,7 @@ class Design:
 
     def print_array(self):
         print('Design is')
-        print(self.array)  
+        print(self.array)
 #def main():
 #    import argparse
 #    from . import systems
