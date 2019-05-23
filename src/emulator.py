@@ -112,11 +112,11 @@ class Emulator:
             1. * kernels.Matern(
                 length_scale=ptp,
                 length_scale_bounds=np.outer(ptp, (.1, 10))
-            ) +
-            kernels.WhiteKernel(
-                noise_level=.1**2,
-                noise_level_bounds=(.01**2, 1)
             )
+            # kernels.WhiteKernel(
+            #     noise_level=.1**2,
+            #     noise_level_bounds=(.01**2, 1)
+            # )
         )
 
         # Fit a GP (optimize the kernel hyperparameters) to each PC.
@@ -128,8 +128,8 @@ class Emulator:
             ).fit(design, z)
             for z in Z.T
         ]
-        print('Emulator design:')
-        print(design.array)
+        # print('Emulator design:')
+        # print(design.array)
 
         # Construct the full linear transformation matrix, which is just the PC
         # matrix with the first axis multiplied by the explained standard
