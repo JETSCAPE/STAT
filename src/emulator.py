@@ -85,7 +85,7 @@ class Emulator:
                 nobs += n
 
         Y = np.concatenate(Y, axis=1)
-        pickle.dump(Y,open('mod_dat.p','wb'))
+        # pickle.dump(Y,open('mod_dat.p','wb'))
 
         self.npc = npc
         self.nobs = nobs
