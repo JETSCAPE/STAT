@@ -272,9 +272,10 @@ class Chain:
 
             #Allows user to specify experimental covariance matrix in __init__.py
             if exp_cov is not None:
-                for obs, subobs, slc in self._slices[sys]:
-                    n = exp_cov[sys][obs][subobs].shape[0]
-                    self._expt_cov[sys][slc, slc] = exp_cov[sys][obs][subobs]
+                for obs1, subobs1, slc1 in self._slices[sys]:
+                    for obs2, subobs2, slc2 in self._slices[sys]:
+                        if exp_cov[sys][(obs1, subobs1)][(obs2, subobs2)] is not None:
+                            self._expt_cov[sys][slc1, slc2] = exp_cov[sys][(obs1, subobs1)][(obs2, subobs2)]
 
             # print(self._expt_y[sys])
             # print(self._expt_cov[sys])
