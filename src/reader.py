@@ -145,3 +145,16 @@ def ReadPrediction(FileName):
     Result["Prediction"] = np.loadtxt(FileName).T
     return Result
 
+def InitializeCovariance(data):
+    Result = {}
+    for system, content in data.items():
+        Result[system] = {}
+        Combination = []
+        for obs in content:
+            for subobs in content[obs]:
+                Combination.append((obs, subobs))
+        for item1 in Combination:
+            Result[system][item1] = {}
+            for item2 in Combination:
+                Result[system][item1][item2] = None
+    return Result
