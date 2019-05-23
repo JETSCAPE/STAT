@@ -11,7 +11,7 @@ On first run, the number of walkers and burn-in steps must be specified, e.g.
     python -m src.mcmc --nwalkers 500 --nburnsteps 100 200
 
 would run 500 walkers for 100 burn-in steps followed by 200 production steps.
-This will create the HDF5 file :file:`mcmc/chain.hdf` (default path).
+This will create the HDF5 file :file:`cache/mcmc_chain.hdf` (default path).
 
 On subsequent runs, the chain resumes from the last point and the number of
 walkers is inferred from the chain, so only the number of production steps is
@@ -193,7 +193,7 @@ class Chain:
     system designs have the same parameters and ranges (except for the norms).
 
     """
-    def __init__(self, path=workdir / 'mcmc' / 'chain.hdf'):
+    def __init__(self, path=workdir / 'cache' / 'mcmc_chain.hdf'):
         self.path = path
         self.path.parent.mkdir(exist_ok=True)
 
