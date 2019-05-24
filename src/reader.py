@@ -160,15 +160,35 @@ def InitializeCovariance(data):
     return Result
 
 """
+def EstimateCovariance(DataX, DataY, SysLength = {}, SysStrength = {}, ScaleX = True, IgnoreMissing = False)
+    DataX          data used for the first index of the output matrix
+    DataY          data used for the second index of the output matrix
+    SysLength      correlation length, source by source.  One can specify a "default" for sources not listed
+                   Negative value indicates that the source is treated as uncorrelated.
+                   If "default" is not specified, it is assumed to be -1 (ie., uncorrelated)
+    SysStrength    correlation strength, source by source.  Again there is a "default" one can specify
+                   If "default" is not specified, it is assumed to be 1.0
+    ScaleX         whether correlation length is in units of "range of x axis", or units of "x"
+    IgnoreMissing  set to true to ignore sources not explicitly listed in SysLength dictionary
+
 Estimates covariance matrix for a block
-Negative length setting means uncorrelated
+
+The function returns a 2D matrix with size (DataX points, DataY points)
+If we pass the same thing to DataX and DataY, we can calculate the diagonal blocks.
+
+The formula used to populate the matrix is
+   Strength * Sigma_x * Sigma_y * exp(pow(-|x - y| / Length, 1.9))
+for each source, and the summed up for all considered sources
+
 """
-def EstimateCovariance(DataX, DataY, SysLength = {}, ScaleX = True, IgnoreMissing = False):
+def EstimateCovariance(DataX, DataY, SysLength = {}, SysStrength = {}, ScaleX = True, IgnoreMissing = False):
     # Number of entries in each data
     NX = len(DataX["Data"]["x"])
     NY = len(DataY["Data"]["x"])
 
-    # Scale of x.  If ScaleX is true, the correlation length is in units of "x range", otherwise it's the same unit as "x"
+    # Scale of x
+    # If ScaleX is true, the correlation length is in units of "x range"
+    #    otherwise it's the same unit as "x"
     DX = 1
     DY = 1
     if ScaleX == True:
@@ -186,6 +206,8 @@ def EstimateCovariance(DataX, DataY, SysLength = {}, ScaleX = True, IgnoreMissin
     # Add a default behavior if not supplied already
     if "default" not in SysLength:
         SysLength["default"] = -1
+    if "default" not in SysStrength:
+        SysStrength["default"] = 1.0
 
     # Now loop over systematic source in dataX, and check if the same thing exist in dataY
     for Source in DataX["SysLabel"]:
@@ -200,19 +222,18 @@ def EstimateCovariance(DataX, DataY, SysLength = {}, ScaleX = True, IgnoreMissin
         IX = DataX["SysLabel"].index(Source)
         IY = DataY["SysLabel"].index(Source)
 
-        Length = -1
-        if Source not in SysLength:
-            Length = SysLength["default"]
-        else:
-            Length = SysLength[Source]
+        Length = SysLength.get(Source, SysLength["default"])
+        Strength = SysStrength.get(Source, SysStrength["default"])
 
         for x in range(0, NX):
             for y in range(0, NY):
                 Factor = 0
                 if(Length > 0):   # Correlated
-                    Factor = np.exp(-np.power(np.absolute(DataX["Data"]["x"][x] * DX - DataY["Data"]["x"][y] * DY) / Length, 1.9));
+                    Diff = DataX["Data"]["x"][x] * DX - DataY["Data"]["x"][y] * DY
+                    Factor = np.exp(-np.power(np.absolute(Diff) / Length, 1.9));
                 else:             # Non-correlated
                     Factor = (x == y)
+                Factor = Factor * Strength
                 Matrix[x, y] = Matrix[x, y] + DataX["Data"]["yerr"]["sys"][x][IX] * DataY["Data"]["yerr"]["sys"][y][IY] * Factor
 
     return Matrix
