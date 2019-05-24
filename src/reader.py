@@ -180,6 +180,7 @@ The formula used to populate the matrix is
    Strength * Sigma_x * Sigma_y * exp(pow(-|x - y| / Length, 1.9))
 for each source, and the summed up for all considered sources
 
+Currently only symmetric uncertainties are supported.  If a source ends with ",low" it is ignored and assumed to be covered by a corresponding one ending with ",high"
 """
 def EstimateCovariance(DataX, DataY, SysLength = {}, SysStrength = {}, ScaleX = True, IgnoreMissing = False):
     # Number of entries in each data
