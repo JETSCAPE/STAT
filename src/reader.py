@@ -158,3 +158,61 @@ def InitializeCovariance(data):
             for item2 in Combination:
                 Result[system][item1][item2] = None
     return Result
+
+"""
+Estimates covariance matrix for a block
+Negative length setting means uncorrelated
+"""
+def EstimateCovariance(DataX, DataY, SysLength = {}, ScaleX = True, IgnoreMissing = False):
+    # Number of entries in each data
+    NX = len(DataX["Data"]["x"])
+    NY = len(DataY["Data"]["x"])
+
+    # Scale of x.  If ScaleX is true, the correlation length is in units of "x range", otherwise it's the same unit as "x"
+    DX = 1
+    DY = 1
+    if ScaleX == True:
+        DX = 1 / (max(DataX["Data"]["x"]) - min(DataX["Data"]["x"]))
+        DY = 1 / (max(DataY["Data"]["x"]) - min(DataY["Data"]["x"]))
+
+    # Initialize empty matrix
+    Matrix = np.zeros([NX, NY])
+
+    # Add statistical uncertainty here, if this is diagonal block
+    if DataX["FileName"] == DataY["FileName"]:
+        for i in range(0, NX):
+            Matrix[i, i] = Matrix[i, i] + DataX["Data"]["yerr"]["stat"][i][0]**2
+
+    # Add a default behavior if not supplied already
+    if "default" not in SysLength:
+        SysLength["default"] = -1
+
+    # Now loop over systematic source in dataX, and check if the same thing exist in dataY
+    for Source in DataX["SysLabel"]:
+        if ",low" in Source:
+            continue
+        if Source not in DataY["SysLabel"]:
+            continue
+
+        if (IgnoreMissing == True) and (Source not in SysLength):
+            continue
+
+        IX = DataX["SysLabel"].index(Source)
+        IY = DataY["SysLabel"].index(Source)
+
+        Length = -1
+        if Source not in SysLength:
+            Length = SysLength["default"]
+        else:
+            Length = SysLength[Source]
+
+        for x in range(0, NX):
+            for y in range(0, NY):
+                Factor = 0
+                if(Length > 0):   # Correlated
+                    Factor = np.exp(-np.power(np.absolute(DataX["Data"]["x"][x] * DX - DataY["Data"]["x"][y] * DY) / Length, 1.9));
+                else:             # Non-correlated
+                    Factor = (x == y)
+                Matrix[x, y] = Matrix[x, y] + DataX["Data"]["yerr"]["sys"][x][IX] * DataY["Data"]["yerr"]["sys"][y][IY] * Factor
+
+    return Matrix
