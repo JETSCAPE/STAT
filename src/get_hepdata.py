@@ -16,7 +16,7 @@ import yaml
 filepath = '../input/MATTERLBT1/'
 data_vrs = 'Version 1.0'
 data_str = 'Data'
-data_url = ['https://www.hepdata.net/download/table/ins1496050/Table8/yaml',
+data_url = ['https://www.hepdata.net/download/table/ins1496050/Table14/yaml',
                 'https://www.hepdata.net/download/table/ins1496050/Table11/yaml',
                 'https://www.hepdata.net/download/table/ins1360290/Table27/1/yaml',
                 'https://www.hepdata.net/download/table/ins1360290/Table29/1/yaml']
@@ -28,7 +28,7 @@ data_fig = ['figure 4a','figure 4b','figure 13','figure 13']
 data_exp = ['CMS','CMS','ATLAS','ATLAS']
 data_sys = ['PbPb5020','PbPb5020','PbPb2760','PbPb2760']
 data_meas = ['RAACharged','RAACharged','RAACharged','RAACharged']
-data_cent = ['00to05','30to50','00to05','30to40']
+data_cent = ['00to10','30to50','00to05','30to40']
 data_year = ['2017','2017','2015','2015']
 
 # KLUDGE-ALERT
