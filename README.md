@@ -11,7 +11,7 @@ File format specification: [v1.0](https://www.evernote.com/l/ACWFCWrEcPxHPJ3_P0z
 
 File reader documentation: [link](https://www.evernote.com/l/ACXYRePvf2lNirII32b25Wg93rqD0kH1LSs)
 
-Previous documentation: [Online Documentation](http://hic-param-est.readthedocs.io/en/latest/)
+Previous documentation: [Online Documentation](http://hic-param-est.readthedocs.io/en/latest/) -- 
 Need to double check if everything up to date
 
 
