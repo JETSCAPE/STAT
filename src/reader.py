@@ -200,7 +200,9 @@ def EstimateCovariance(DataX, DataY, SysLength = {}, SysStrength = {}, ScaleX = 
     Matrix = np.zeros([NX, NY])
 
     # Add statistical uncertainty here, if this is diagonal block
+    DiagonalBlock = False
     if DataX["FileName"] == DataY["FileName"]:
+        DiagonalBlock = True
         for i in range(0, NX):
             Matrix[i, i] = Matrix[i, i] + DataX["Data"]["yerr"]["stat"][i][0]**2
 
@@ -233,7 +235,8 @@ def EstimateCovariance(DataX, DataY, SysLength = {}, SysStrength = {}, ScaleX = 
                     Diff = DataX["Data"]["x"][x] * DX - DataY["Data"]["x"][y] * DY
                     Factor = np.exp(-np.power(np.absolute(Diff) / Length, 1.9));
                 else:             # Non-correlated
-                    Factor = (x == y)
+                    if DiagonalBlock == True:
+                        Factor = (x == y)
                 Factor = Factor * Strength
                 Matrix[x, y] = Matrix[x, y] + DataX["Data"]["yerr"]["sys"][x][IX] * DataY["Data"]["yerr"]["sys"][y][IY] * Factor
 
