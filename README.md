@@ -5,11 +5,14 @@ Bayesian parameter estimation for relativistic heavy-ion collisions
 Links
 -----
 
+Once things are working well, we should transcribe the information into this repository from these links
+
 File format specification: [v1.0](https://www.evernote.com/l/ACWFCWrEcPxHPJ3_P0zUT74nuasCoL_DBmY)
 
 File reader documentation: [link](https://www.evernote.com/l/ACXYRePvf2lNirII32b25Wg93rqD0kH1LSs)
 
-Previous documentation: [Online Documentation](http://hic-param-est.readthedocs.io/en/latest/) Need to double check if everything up to date
+Previous documentation: [Online Documentation](http://hic-param-est.readthedocs.io/en/latest/)
+Need to double check if everything up to date
 
 
 
