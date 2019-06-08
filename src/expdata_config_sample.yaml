@@ -1,0 +1,66 @@
+# Configuration parameters to download experimental data and/or edit its format,
+# used by the script get_expdata.py.
+#
+# You can specify one or more blocks for HEPData, PHENIX, or EditData or any combination,
+# and they will all be processed according to their appropriate scripts, steered by get_expdata.py.
+
+# HEPData
+# Any top-level entry with "hepdata" in the name will be processed by get_hepdata.py
+# Each variable consists of a list with one entry per dataset (exceptions: filepath,data_vrs,data_str)
+# You can provide all hepdata entries in a list (as in "hepdata" block), or you can
+# provide separate config entries for one or more hepdata entries (as in "hepdata_CMS_HadronRAA_010" block).
+#-----------------------------------------------------------------------------------------------
+hepdata:
+  filepath: '../input/MATTERLBT1-test/'
+  data_vrs: 'Version 1.0'
+  data_str: 'Data'
+  data_url: ['https://www.hepdata.net/download/table/ins1496050/Table14/yaml', 'https://www.hepdata.net/download/table/ins1496050/Table11/yaml', 'https://www.hepdata.net/download/table/ins1360290/Table27/1/yaml', 'https://www.hepdata.net/download/table/ins1360290/Table29/1/yaml']
+  data_doi: ['http://dx.doi.org/10.1007/JHEP04(2017)039', 'http://dx.doi.org/10.1007/JHEP04(2017)039', 'http://dx.doi.org/10.1007/JHEP09(2015)050', 'http://dx.doi.org/10.1007/JHEP09(2015)050']
+  data_fig: ['figure 4a','figure 4b','figure 13','figure 13']
+  data_exp: ['CMS','CMS','ATLAS','ATLAS']
+  data_sys: ['PbPb5020','PbPb5020','PbPb2760','PbPb2760']
+  data_meas: ['RAACharged','RAACharged','RAACharged','RAACharged']
+  data_cent: ['00to10','30to50','00to05','30to40']
+  data_year: ['2017','2017','2015','2015']
+
+hepdata_CMS_HadronRAA_010:
+  filepath: '../input/MATTERLBT1-test-2/'
+  data_vrs: 'Version 1.0'
+  data_str: 'Data'
+  data_url: ['https://www.hepdata.net/download/table/ins1496050/Table14/yaml']
+  data_doi: ['http://dx.doi.org/10.1007/JHEP04(2017)039']
+  data_fig: ['figure 4a']
+  data_exp: ['CMS']
+  data_sys: ['PbPb5020']
+  data_meas: ['RAACharged']
+  data_cent: ['00to10']
+  data_year: ['2017']
+
+# PHENIX Data
+# Any top-level entry with "phenix" in the name will be processed by get_phenix.py
+#-----------------------------------------------------------------------------------------------
+phenix:
+  filepath: '../input/MATTERLBT1-test/'
+  data_vrs: 'Version 1.0'
+  data_str: 'Data'
+  data_doi: 'https://doi.org/10.1103/PhysRevC.87.034911'
+  data_fig: 'figure 11 and 12'
+  data_url: 'https://www.phenix.bnl.gov/phenix/WWW/info/data/ppg133/app_pi0raa.txt'
+  #data_url: 'https://www.hepdata.net/download/table/ins1496050/Table8/csv'
+  data_exp: 'PHENIX'
+  data_sys: 'AuAu200'
+  data_meas: 'RAApi0'
+  data_errs: ['uncorr', 'corr', 'global']
+  data_cent: ['0-10', '10-20','20-30','30-40','40-50','50-60','60-70','70-80','80-93','0-93','0-5']
+  data_year: '2013'
+
+# Edit Data
+# Any top-level entry with "extractError" in the name will be processed by edit_data.py
+#-----------------------------------------------------------------------------------------------
+extractError:
+  dir: '../input/MATTERLBT1-test'                         # Data file directory
+  file: 'Data_ATLAS_PbPb2760_RAACharged_30to40_2015.dat'  # Data file name
+  error: 'sys_lo'                                         # Label of error from which portions will be extracted
+  new: {'sys,TAA':0.04, 'sys,lumi':0.03}                  # Dictionary for new error labels and values
+  suffix: '.orig'                                         # Suffix to append to original file
+  verbose: true                                           # Standard verbose option
