@@ -92,8 +92,8 @@ def get_hepdata(configFileEntry = None):
         try:
           e = str(err['symerror'])
           # Convert if percentage
-          # if (e[-1]=='%'):
-          #   e = str(float(e[:-1])*v['value']*0.01)
+          if (e[-1]=='%'):
+            e = str(float(e[:-1])*v['value']*0.01)
           errs[-1] += ' ' + e + ' ' + e
           # print ('  sym',e,e)
         except KeyError:

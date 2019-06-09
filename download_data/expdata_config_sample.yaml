@@ -11,7 +11,7 @@
 # provide separate config entries for one or more hepdata entries (as in "hepdata_CMS_HadronRAA_010" block).
 #-----------------------------------------------------------------------------------------------
 hepdata:
-  filepath: '../input/MATTERLBT1-test/'
+  filepath: 'input/MATTERLBT1-test/'
   data_vrs: 'Version 1.0'
   data_str: 'Data'
   data_url: ['https://www.hepdata.net/download/table/ins1496050/Table14/yaml', 'https://www.hepdata.net/download/table/ins1496050/Table11/yaml', 'https://www.hepdata.net/download/table/ins1360290/Table27/1/yaml', 'https://www.hepdata.net/download/table/ins1360290/Table29/1/yaml']
@@ -24,7 +24,7 @@ hepdata:
   data_year: ['2017','2017','2015','2015']
 
 hepdata_CMS_HadronRAA_010:
-  filepath: '../input/MATTERLBT1-test-2/'
+  filepath: 'input/MATTERLBT1-test-2/'
   data_vrs: 'Version 1.0'
   data_str: 'Data'
   data_url: ['https://www.hepdata.net/download/table/ins1496050/Table14/yaml']
@@ -40,7 +40,7 @@ hepdata_CMS_HadronRAA_010:
 # Any top-level entry with "phenix" in the name will be processed by get_phenix.py
 #-----------------------------------------------------------------------------------------------
 phenix:
-  filepath: '../input/MATTERLBT1-test/'
+  filepath: 'input/MATTERLBT1-test/'
   data_vrs: 'Version 1.0'
   data_str: 'Data'
   data_doi: 'https://doi.org/10.1103/PhysRevC.87.034911'
@@ -58,7 +58,7 @@ phenix:
 # Any top-level entry with "extractError" in the name will be processed by edit_data.py
 #-----------------------------------------------------------------------------------------------
 extractError:
-  dir: '../input/MATTERLBT1-test'                         # Data file directory
+  dir: 'input/MATTERLBT1-test'                            # Data file directory
   file: 'Data_ATLAS_PbPb2760_RAACharged_30to40_2015.dat'  # Data file name
   error: 'sys_lo'                                         # Label of error from which portions will be extracted
   new: {'sys,TAA':0.04, 'sys,lumi':0.03}                  # Dictionary for new error labels and values

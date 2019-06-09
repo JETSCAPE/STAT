@@ -7,6 +7,7 @@ All relevant entries in a user-specified configuration file will be processed:
 '''
     
 import os
+import sys
 import yaml
 import argparse
 import get_hepdata
@@ -20,7 +21,7 @@ def get_expdata(configFile):
   with open(configFile, 'r') as stream:
     config = yaml.safe_load(stream)
   
-  # Loop through configFile, and process each entry with appropriate script
+  # Loop through configFile, and process each download entry with appropriate script
   for entry in config:
     if 'hepdata' in entry:
       print('Getting hepdata for entry "{}"...'.format(entry))
@@ -28,7 +29,10 @@ def get_expdata(configFile):
     elif 'phenix' in entry:
       print('Getting phenix data for entry "{}"...'.format(entry))
       get_phenix.get_phenix(config[entry])
-    elif 'extractError' in entry:
+
+  # Loop through configFile, and process each extractError entry with edit_data.py
+  for entry in config:
+    if 'extractError' in entry:
       print('Editing data for entry "{}"...'.format(entry))
       edit_data.edit_data(config[entry])
 
