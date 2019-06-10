@@ -12,7 +12,7 @@ import argparse
 
 #----------------------------------------------------------------------------------------------
 def get_phenix(configFileEntry = None):
-  
+
   # Check that config file entry exists
   if not configFileEntry:
     print('configFileEntry is empty!')
@@ -71,12 +71,12 @@ def get_phenix(configFileEntry = None):
       filename = filepath + '_'.join(filelist) + '.dat'
       files.append(filename)
       # print (fcnt,filename)
-  
+
       # Complete Header
       this_header = generic_header
       this_header += '# Centrality ' + data_cent + '\n'
       this_header += '# XY pT RAA \n'
-      this_header += '# Label xmin xmax y stat_lo stat_hi corr_lo corr_hi global_lo global_hi \n'
+      this_header += '# Label x y stat,low stat,high corr,low corr,high global,low global,high \n'
       headers.append(this_header)
       entries.append('')
 
@@ -101,7 +101,7 @@ def get_phenix(configFileEntry = None):
   # print(files[i])
   # print(headers[i])
   # print(entries[i])
-            
+
 #----------------------------------------------------------------------------------------------
 if __name__ == '__main__':
   get_phenix()

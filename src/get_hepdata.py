@@ -17,7 +17,7 @@ def get_hepdata(configFileEntry = None):
   if not configFileEntry:
     print('configFileEntry is empty!')
     return
-  
+
   # Load configuration variables
   filepath = configFileEntry['filepath']
   data_vrs = configFileEntry['data_vrs']
@@ -72,9 +72,9 @@ def get_hepdata(configFileEntry = None):
     error_label = ''
     first_entry = yaml_data['dependent_variables'][0]['values'][0]
     for err in first_entry['errors']:
-      error_label += err['label']+'_lo ' + err['label']+'_hi '
+      error_label += err['label']+',low ' + err['label']+',high '
     data_header +='# Label xmin xmax y ' + error_label + '\n'
-      
+
     # print(yaml_data['independent_variables'][0]['values'])
     for x in yaml_data['independent_variables'][0]['values']:
       xlo.append(x['low'])
