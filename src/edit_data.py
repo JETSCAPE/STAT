@@ -16,7 +16,7 @@ def edit_data(configFileEntry = None):
   if not configFileEntry:
     print('configFileEntry is empty!')
     return
-  
+
   # Load configuration variables
   dir = configFileEntry['dir']
   file = configFileEntry['file']
@@ -58,7 +58,7 @@ def edit_data(configFileEntry = None):
   LabelLine = HeaderLines[LabelIndex].rstrip('\n')
   for Key, Error in new.items():
     EditLine += str(Key) + ':' + str(Error)
-    LabelLine += ' ' + str(Key) + '_lo ' + str(Key) + '_hi'
+    LabelLine += ' ' + str(Key) + ',low ' + str(Key) + ',high'
   HeaderLines[LabelIndex] = EditLine + ' from ' + error + '\n'
   HeaderLines.append(LabelLine)
 
