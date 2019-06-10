@@ -98,7 +98,7 @@ def get_hepdata(configFileEntry = None):
           # print ('  sym',e,e)
         except KeyError:
           e = err['asymerror']
-          errs[-1] += ' ' + str(e['plus']) + ' ' + str(e['minus'])
+          errs[-1] += ' ' + str(abs(float(e['plus']))) + ' ' + str(abs(float(e['minus'])))
           # print ('  asym',e['plus'],e['minus'])
 
     # Check that we have same number of x and y entries
