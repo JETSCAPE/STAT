@@ -60,7 +60,9 @@ phenix:
 extractError:
   dir: 'input/MATTERLBT1-test'                            # Data file directory
   file: 'Data_ATLAS_PbPb2760_RAACharged_30to40_2015.dat'  # Data file name
-  error: 'sys_lo'                                         # Label of error from which portions will be extracted
+  error: 'sys,low'                                        # Label of error from which portions will be extracted
   new: {'sys,TAA':0.04, 'sys,lumi':0.03}                  # Dictionary for new error labels and values
   suffix: '.orig'                                         # Suffix to append to original file
   verbose: true                                           # Standard verbose option
+
+
