@@ -33,7 +33,7 @@ def get_phenix(configFileEntry = None):
   data_year = configFileEntry['data_year']
 
   # Prepare generic header portion
-  generic_header = '# JETSCAPE data entry version 1.0\n'
+  generic_header = '# Version 1.0\n'
   generic_header += '# DOI ' + data_doi + '\n'
   generic_header += '# Source ' + data_url + '\n'
   generic_header += '# Experiment ' + data_exp + '\n'
