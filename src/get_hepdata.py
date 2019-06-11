@@ -44,7 +44,7 @@ def get_hepdata(configFileEntry = None):
   for i in list(range(len(data_url))):
 
     # Create new header for this entry
-    data_header = '# JETSCAPE data entry version 1.0\n'
+    data_header = '# Version 1.0\n'
     data_header += '# DOI ' + data_doi[i] + '\n'
     data_header += '# Source ' + data_url[i] + '\n'
     data_header += '# Experiment ' + data_exp[i] + '\n'
