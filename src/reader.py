@@ -73,7 +73,7 @@ def ReadData(FileName):
     else:
         raise AssertionError('Invalid list of initial columns!  Should be ("x", "y", "stat,low", "stat,high"), or ("xmin", "xmax", "y", "stat,low", "stat,high")')
 
-    # Then read the actual design parameters
+    # Then read the actual data
     RawData = np.loadtxt(FileName)
 
     Result["Data"] = {}
@@ -118,7 +118,7 @@ def ReadCovariance(FileName):
     if(Version != '1.0'):
         raise AssertionError('Bad file version number while reading design points')
 
-    # Then read the actual design parameters
+    # Then read the actual covariance matrix
     Result["Matrix"] = np.loadtxt(FileName)
     return Result
 
@@ -145,7 +145,7 @@ def ReadPrediction(FileName):
     if(Version != '1.0'):
         raise AssertionError('Bad file version number while reading design points')
 
-    # Then read the actual design parameters
+    # Then read the actual model predictions
     Result["Prediction"] = np.loadtxt(FileName).T
     return Result
 
