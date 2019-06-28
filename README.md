@@ -38,7 +38,7 @@ Installation
 
 7. Navigate to the downloaded/cloned git repository.
 
-8. Type: jupyter notebook. This will open Jupyter iPython Notebook in a web browser.
+8. Type: `jupyter notebook`. This will open Jupyter iPython Notebook in a web browser.
 In Jupyter, open `Example.ipynb`, and run the first cell. If it runs without error, then you should be properly set up for the program.
 
 9. Execute all cells for an example of an analysis
