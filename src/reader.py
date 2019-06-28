@@ -1,3 +1,7 @@
+'''
+Read data according to the JetScape 1.0 stat specification
+'''
+
 import numpy as np
 
 import os
