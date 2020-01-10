@@ -24,7 +24,7 @@ This is the package for statistical analysis
 Installation
 ------------
 
-1. Install python3, with packages `emcee`, `h5py`, `hic`, `numpy`, `PyYAML`, `scikit-learn` (>= 0.18), `scipy`, `pandas`, `pathlib`, `hsluv`, `matplotlib`.  Use pip to install them if needed
+1. Install python3, with packages `emcee` (==1.2.0), `h5py`, `hic`, `numpy`, `PyYAML`, `scikit-learn` (>= 0.18), `scipy`, `pandas`, `pathlib`, `hsluv`, `matplotlib`.  Use pip to install them if needed
 
 2. If you don't have R, download R from [here](https://cran.cnr.berkeley.edu/)
 
