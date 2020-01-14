@@ -1,9 +1,9 @@
-emcee
+emcee<=2.2.1
 h5py
 hic
 numpy
 PyYAML
-scikit-learn >= 0.18
+scikit-learn>=0.18
 scipy
 pandas
 pathlib
