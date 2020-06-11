@@ -24,7 +24,6 @@ import subprocess
 import tempfile
 import warnings
 
-from sklearn.externals import joblib
 import h5py
 import hsluv
 import numpy as np

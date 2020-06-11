@@ -17,8 +17,13 @@ import logging
 import pickle
 
 import numpy as np
+
+try:                                      # compatibility hack: first try to import joblib the deprecated way
+    from sklearn.externals import joblib  # raises an ImportError if sklearn.externals.joblib is not found
+except ImportError:                       # if that failed, then try to import joblib the correct way
+    import joblib                         # this shouldn't fail, but if it does, run 'pip install joblib scikit-learn --user' to resolve
+
 from sklearn.decomposition import PCA
-from sklearn.externals import joblib
 from sklearn.gaussian_process import GaussianProcessRegressor as GPR
 from sklearn.gaussian_process import kernels
 from sklearn.preprocessing import StandardScaler

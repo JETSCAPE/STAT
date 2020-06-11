@@ -32,7 +32,6 @@ import emcee
 import h5py
 import numpy as np
 from scipy.linalg import lapack
-from sklearn.externals import joblib
 from . import workdir, systems, observables, exp_data_list, exp_cov#, expt
 from .design import Design
 from .emulator import emulators
