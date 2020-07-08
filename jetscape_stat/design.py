@@ -4,7 +4,7 @@ Generates Latin-hypercube parameter designs.
 When run as a script, writes input files for use with my
 `heavy-ion collision event generator
 <https://github.com/jbernhard/heavy-ion-collisions-osg>`_.
-Run ``python -m src.design --help`` for usage information.
+Run ``python -m jetscape_stat.design --help`` for usage information.
 
 .. warning::
 

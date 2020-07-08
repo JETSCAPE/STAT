@@ -4,7 +4,7 @@ Trains Gaussian process emulators.
 When run as a script, allows retraining emulators, specifying the number of
 principal components, and other options (however it is not necessary to do this
 explicitly --- the emulators will be trained automatically when needed).  Run
-``python -m src.emulator --help`` for usage information.
+``python -m jetscape_stat.emulator --help`` for usage information.
 
 Uses the `scikit-learn <http://scikit-learn.org>`_ implementations of
 `principal component analysis (PCA)
@@ -181,7 +181,7 @@ class Emulator:
 
         # cache the __dict__ rather than the Emulator instance itself
         # this way the __name__ doesn't matter, e.g. a pickled
-        # __main__.Emulator can be unpickled as a src.emulator.Emulator
+        # __main__.Emulator can be unpickled as a jetscape_stat.emulator.Emulator
         if not retrain and cachefile.exists():
             logging.debug('loading emulator for system %s from cache', system)
             emu = cls.__new__(cls)

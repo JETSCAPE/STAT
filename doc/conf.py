@@ -9,7 +9,7 @@ import sys
 pardir = os.path.abspath(os.pardir)
 sys.path.insert(1, pardir)
 sys.path.insert(1,os.path.abspath('.'))
-# so existing cache directory is used when src is imported
+# so existing cache directory is used when jetscape_stat is imported
 os.environ['WORKDIR'] = pardir
 
 project = 'hic-param-est'
@@ -65,7 +65,7 @@ def linkcode_resolve(domain, info):
     except Exception:
         return
 
-    return '{}src/{}#L{}-L{}'.format(
+    return '{}jetscape_stat/{}#L{}-L{}'.format(
         github_url, sourcefile,
         startline, startline + len(lines) - 1
     )

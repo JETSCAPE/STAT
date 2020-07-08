@@ -10,9 +10,9 @@ The following is a brief description of each module and its most important class
 
 Package init file
 -----------------
-Source code: :ghlink:`src/__init__.py`
+Source code: :ghlink:`jetscape_stat/__init__.py`
 
-.. automodule:: src
+.. automodule:: jetscape_stat
 
 .. autodata:: systems
 
@@ -36,9 +36,9 @@ Source code: :ghlink:`src/__init__.py`
 
 Design
 ------
-Source code: :ghlink:`src/design.py`
+Source code: :ghlink:`jetscape_stat/design.py`
 
-.. automodule:: src.design
+.. automodule:: jetscape_stat.design
 
 .. autofunction:: generate_lhs
 
@@ -47,18 +47,18 @@ Source code: :ghlink:`src/design.py`
 
 Emulator
 --------
-Source code: :ghlink:`src/emulator.py`
+Source code: :ghlink:`jetscape_stat/emulator.py`
 
-.. automodule:: src.emulator
+.. automodule:: jetscape_stat.emulator
 
 .. autoclass:: Emulator
    :members:
 
 MCMC
 ----
-Source code: :ghlink:`src/mcmc.py`
+Source code: :ghlink:`jetscape_stat/mcmc.py`
 
-.. automodule:: src.mcmc
+.. automodule:: jetscape_stat.mcmc
 
 .. autoclass:: Chain(path=Path('mcmc/chain.hdf'))
    :members:
@@ -68,9 +68,9 @@ Source code: :ghlink:`src/mcmc.py`
 
 Plots and figures
 -----------------
-Source code: :ghlink:`src/plots.py`
+Source code: :ghlink:`jetscape_stat/plots.py`
 
-.. automodule:: src.plots
+.. automodule:: jetscape_stat.plots
 
 .. autofunction:: posterior
 

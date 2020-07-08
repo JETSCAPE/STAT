@@ -3,12 +3,12 @@ Markov chain Monte Carlo model calibration using the `affine-invariant ensemble
 sampler (emcee) <http://dfm.io/emcee>`_.
 
 This module must be run explicitly to create the posterior distribution.
-Run ``python -m src.mcmc --help`` for complete usage information.
+Run ``python -m jetscape_stat.mcmc --help`` for complete usage information.
 
 On first run, the number of walkers and burn-in steps must be specified, e.g.
 ::
 
-    python -m src.mcmc --nwalkers 500 --nburnsteps 100 200
+    python -m jetscape_stat.mcmc --nwalkers 500 --nburnsteps 100 200
 
 would run 500 walkers for 100 burn-in steps followed by 200 production steps.
 This will create the HDF5 file :file:`cache/mcmc_chain.hdf` (default path).
@@ -17,7 +17,7 @@ On subsequent runs, the chain resumes from the last point and the number of
 walkers is inferred from the chain, so only the number of production steps is
 required, e.g. ::
 
-    python -m src.mcmc 300
+    python -m jetscape_stat.mcmc 300
 
 would run an additional 300 production steps (total of 500).
 

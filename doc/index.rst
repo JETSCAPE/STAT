@@ -63,16 +63,19 @@ Now, fork the `Github repository <https://github.com/jake-coleman32/hic-param-es
 
 Usage
 -----
-All the analysis code is in the ``src`` folder.
-In the Python lexicon, each file in ``src`` is a `module <https://docs.python.org/3/tutorial/modules.html>`_ and the ``src`` folder itself is a `package <https://docs.python.org/3/tutorial/modules.html#packages>`_.
+
+All the analysis code is in the ``jetscape_stat`` folder.
+In the Python lexicon, each file in ``jetscape_stat`` is a `module
+<https://docs.python.org/3/tutorial/modules.html>`_ and the ``jetscape_stat`` folder itself is a `package
+<https://docs.python.org/3/tutorial/modules.html#packages>`_.
 
 Each module is designed to be executed as a script.
 Since the modules import each other, and due to the way Python intra-package references work, they must be executed using their fully-qualified module names and the ``-m`` option to the Python interpreter, e.g.::
 
-   python -m src.emulator
+   python -m jetscape_stat.emulator
 
 to run the :mod:`emulator` module.
-Commands should be run in the directory containing ``src``, i.e. the project root directory.
+Commands should be run in the directory containing ``jetscape_stat``, i.e. the project root directory.
 
 Modules
 -------
