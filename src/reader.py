@@ -164,7 +164,7 @@ def InitializeCovariance(data):
     return Result
 
 """
-def EstimateCovariance(DataX, DataY, SysLength = {}, SysStrength = {}, ScaleX = True, IgnoreMissing = False)
+def EstimateCovariance(DataX, DataY, SysLength = {}, SysStrength = {}, ScaleX = False, IgnoreMissing = False)
     DataX          data used for the first index of the output matrix
     DataY          data used for the second index of the output matrix
     SysLength      correlation length, source by source.  One can specify a "default" for sources not listed
@@ -186,7 +186,7 @@ for each source, and the summed up for all considered sources
 
 Currently only symmetric uncertainties are supported.  If a source ends with ",low" it is ignored and assumed to be covered by a corresponding one ending with ",high"
 """
-def EstimateCovariance(DataX, DataY, SysLength = {}, SysStrength = {}, ScaleX = True, IgnoreMissing = False):
+def EstimateCovariance(DataX, DataY, SysLength = {}, SysStrength = {}, ScaleX = False, IgnoreMissing = False):
     # Number of entries in each data
     NX = len(DataX["Data"]["x"])
     NY = len(DataY["Data"]["x"])
