@@ -17,17 +17,18 @@ def ReadDesign(FileName):
     Result["FileName"] = FileName
 
     # First read all the header information
-    for Line in open(FileName):
-        Items = Line.split()
-        if (len(Items) < 2): continue
-        if Items[0] != '#': continue
+    with open(FileName, "r") as f:
+        for Line in f:
+            Items = Line.split()
+            if (len(Items) < 2): continue
+            if Items[0] != '#': continue
 
-        if(Items[1] == 'Version'):
-            Version = Items[2]
-        elif(Items[1] == 'Parameter'):
-            Result["Parameter"] = Items[2:]
+            if(Items[1] == 'Version'):
+                Version = Items[2]
+            elif(Items[1] == 'Parameter'):
+                Result["Parameter"] = Items[2:]
 
-    if(Version != '1.0'):
+    if(Version not in ['1.0', '2.0']):
         raise AssertionError('Bad file version number while reading design points')
 
     # Then read the actual design parameters
@@ -42,33 +43,34 @@ def ReadData(FileName):
     Result["FileName"] = FileName
 
     # First read all the header information
-    for Line in open(FileName):
-        Items = Line.split()
-        if (len(Items) < 2): continue
-        if Items[0] != '#': continue
+    with open(FileName, "r") as f:
+        for Line in f:
+            Items = Line.split()
+            if (len(Items) < 2): continue
+            if Items[0] != '#': continue
 
-        if(Items[1] == 'Version'):
-            Version = Items[2]
-        elif(Items[1] == 'DOI'):
-            Result["DOI"] = Items[2:]
-        elif(Items[1] == 'Source'):
-            Result["Source"] = Items[2:]
-        elif(Items[1] == 'System'):
-            Result["System"] = Items[2]
-        elif(Items[1] == 'Centrality'):
-            Result["Centrality"] = Items[2:4]
-        elif(Items[1] == 'XY'):
-            Result["XY"] = Items[2:4]
-        elif(Items[1] == 'Label'):
-            Result["Label"] = Items[2:]
+            if(Items[1] == 'Version'):
+                Version = Items[2]
+            elif(Items[1] == 'DOI'):
+                Result["DOI"] = Items[2:]
+            elif(Items[1] == 'Source'):
+                Result["Source"] = Items[2:]
+            elif(Items[1] == 'System'):
+                Result["System"] = Items[2]
+            elif(Items[1] == 'Centrality'):
+                Result["Centrality"] = Items[2:4]
+            elif(Items[1] == 'XY'):
+                Result["XY"] = Items[2:4]
+            elif(Items[1] == 'Label'):
+                Result["Label"] = Items[2:]
 
-    if(Version != '1.0'):
+    if(Version not in ['1.0', '2.0']):
         raise AssertionError('Bad file version number while reading design points')
 
     XMode = ''
-    if(Result["Label"][0:4] == ['x', 'y', 'stat,low', 'stat,high']):
+    if Result["Label"][0:4] == ['x', 'y', 'stat,low', 'stat,high']:
         XMode = 'x'
-    elif(Result["Label"][0:5] == ['xmin', 'xmax', 'y', 'stat,low', 'stat,high']):
+    elif Result["Label"][0:5] == ['xmin', 'xmax', 'y', 'stat,low', 'stat,high']:
         XMode = 'xminmax'
     else:
         raise AssertionError('Invalid list of initial columns!  Should be ("x", "y", "stat,low", "stat,high"), or ("xmin", "xmax", "y", "stat,low", "stat,high")')
@@ -85,6 +87,11 @@ def ReadData(FileName):
         Result["Data"]["yerr"]["sys"] = RawData[:, 4:]
         Result["SysLabel"] = Result["Label"][4:]
     elif(XMode == 'xminmax'):
+        # If we only have one row of data (eg. CMS Jet RAA, R = 1.0), we need to promote the array
+        # from being treated as 1D to being treated as 2D with one row.
+        if RawData.ndim == 1:
+            RawData = RawData[np.newaxis, :]
+
         Result["Data"]["x"] = (RawData[:, 0] + RawData[:, 1]) / 2
         Result["Data"]["xerr"] = (RawData[:, 1] - RawData[:, 0]) / 2
         Result["Data"]["y"] = RawData[:, 2]
@@ -103,19 +110,20 @@ def ReadCovariance(FileName):
     Result["FileName"] = FileName
 
     # First read all the header information
-    for Line in open(FileName):
-        Items = Line.split()
-        if (len(Items) < 2): continue
-        if Items[0] != '#': continue
+    with open(FileName, "r") as f:
+        for Line in f:
+            Items = Line.split()
+            if (len(Items) < 2): continue
+            if Items[0] != '#': continue
 
-        if(Items[1] == 'Version'):
-            Version = Items[2]
-        elif(Items[1] == 'Data1'):
-            Result["Data1"] = Items[2]
-        elif(Items[1] == 'Data2'):
-            Result["Data2"] = Items[2]
+            if(Items[1] == 'Version'):
+                Version = Items[2]
+            elif(Items[1] == 'Data1'):
+                Result["Data1"] = Items[2]
+            elif(Items[1] == 'Data2'):
+                Result["Data2"] = Items[2]
 
-    if(Version != '1.0'):
+    if(Version not in ['1.0', '2.0']):
         raise AssertionError('Bad file version number while reading design points')
 
     # Then read the actual covariance matrix
@@ -130,19 +138,20 @@ def ReadPrediction(FileName):
     Result["FileName"] = FileName
 
     # First read all the header information
-    for Line in open(FileName):
-        Items = Line.split()
-        if (len(Items) < 2): continue
-        if Items[0] != '#': continue
+    with open(FileName, "r") as f:
+        for Line in f:
+            Items = Line.split()
+            if (len(Items) < 2): continue
+            if Items[0] != '#': continue
 
-        if(Items[1] == 'Version'):
-            Version = Items[2]
-        elif(Items[1] == 'Data'):
-            Result["Data"] = Items[2]
-        elif(Items[1] == 'Design'):
-            Result["Design"] = Items[2]
+            if(Items[1] == 'Version'):
+                Version = Items[2]
+            elif(Items[1] == 'Data'):
+                Result["Data"] = Items[2]
+            elif(Items[1] == 'Design'):
+                Result["Design"] = Items[2]
 
-    if(Version != '1.0'):
+    if(Version not in ['1.0', '2.0']):
         raise AssertionError('Bad file version number while reading design points')
 
     # Then read the actual model predictions
@@ -197,8 +206,11 @@ def EstimateCovariance(DataX, DataY, SysLength = {}, SysStrength = {}, ScaleX = 
     DX = 1
     DY = 1
     if ScaleX == True:
-        DX = 1 / (max(DataX["Data"]["x"]) - min(DataX["Data"]["x"]))
-        DY = 1 / (max(DataY["Data"]["x"]) - min(DataY["Data"]["x"]))
+        # If there is only one row, this will cause issues.
+        if len(DataX["Data"]["x"]) > 1:
+            DX = 1 / (max(DataX["Data"]["x"]) - min(DataX["Data"]["x"]))
+        if len(DataY["Data"]["x"]) > 1:
+            DY = 1 / (max(DataY["Data"]["x"]) - min(DataY["Data"]["x"]))
 
     # Initialize empty matrix
     Matrix = np.zeros([NX, NY])
