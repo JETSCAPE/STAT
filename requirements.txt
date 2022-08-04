@@ -5,7 +5,8 @@ numpy
 PyYAML
 joblib
 scikit-learn>=0.18
-scipy
+# As of July 2022, there seems to be a conflict between scipy 1.8 and scikit-learn
+scipy<=1.7.3
 pandas
 pathlib
 hsluv
