@@ -118,10 +118,10 @@ class Emulator:
                 length_scale=ptp,
                 length_scale_bounds=np.outer(ptp, (.1, 10))
             )
-            # kernels.WhiteKernel(
-            #     noise_level=.1**2,
-            #     noise_level_bounds=(.01**2, 1)
-            # )
+            + kernels.WhiteKernel(
+                noise_level=.1**2,
+                noise_level_bounds=(.00001**2, 1)
+            )
         )
 
         # Fit a GP (optimize the kernel hyperparameters) to each PC.
