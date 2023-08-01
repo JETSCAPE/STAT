@@ -4,6 +4,7 @@
 *.npy
 *.pkl
 *.pyc
+*.p
 *Answer*
 *walkthrough*
 plots/
