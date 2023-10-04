@@ -36,7 +36,7 @@ def Initialize():
     cachedir.mkdir(parents=True, exist_ok=True)
 
     global AllData
-    AllData = pickle.load((workdir / 'input/default.p').open('rb'))
+    AllData = pickle.load((workdir / 'input/vac-analysis.p').open('rb'))
 
     #: Sets the collision systems for the entire project,
     #: where each system is a string of the form
