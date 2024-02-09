@@ -32,13 +32,95 @@ import emcee
 import h5py
 import numpy as np
 from scipy.linalg import lapack
-from . import workdir, systems, observables, exp_data_list, exp_cov#, expt
+from . import workdir
+from .reader import systems, observables, exp_data_list, exp_cov#, expt
 from .design import Design
 from .emulator import emulators
 import pickle
 from scipy.stats import multivariate_normal
+import os
+import pickle
+from pathlib import Path
 
 
+def getData(picklefile):
+    global AllData
+    AllData = pickle.load((workdir / picklefile).open('rb'))
+
+    #: Sets the collision systems for the entire project,
+    #: where each system is a string of the form
+    #: ``'<projectile 1><projectile 2><beam energy in GeV>'``,
+    #: such as ``'PbPb2760'``, ``'AuAu200'``, ``'pPb5020'``.
+    #: Even if the project uses only a single system,
+    #: this should still be a list of one system string.
+    global systems
+    systems = AllData["systems"]
+
+    #: Design attribute. This is a list of
+    #: strings describing the inputs.
+    #: The default is for the example data.
+    global keys
+    keys = AllData["keys"]
+
+    #: Design attribute. This is a list of input
+    #: labels in LaTeX for plotting.
+    #: The default is for the example data.
+    global labels
+    labels = AllData["labels"]
+
+    #: Design attribute. This is list of tuples of
+    #: (min,max) for each design input.
+    #: The default is for the example data.
+    global ranges
+    ranges = AllData["ranges"]
+
+    #: Design array to use - should be a numpy array.
+    #: Keep at None generate a Latin Hypercube with above (specified) range.
+    #: Design array for example is commented under default.
+    global design_array
+    design_array = AllData["design"]
+
+    #: Dictionary of the model output.
+    #: Form MUST be data_list[system][observable][subobservable][{'Y': ,'x': }].
+    #:     'Y' is an (n x p) numpy array of the output.
+    #:
+    #:     'x' is a (1 x p) numpy array of numeric index of columns of Y (if exists). In the example data, x is p_T.
+    #: This MUST be changed from None - no built-in default exists. Uncomment the line below default for example.
+    global data_list
+    data_list = AllData["model"]
+
+    #: Dictionary for the model validation output
+    #: Must be the same for as the model output dictionary
+    #data_list_val = pickle.load((cachedir / 'model/validation/data_dict_val.p').open('rb'))
+    global data_list_val
+    data_list_val = None
+
+    #: Dictionary of the experimental data.
+    #: Form MUST be exp_data_list[system][observable][subobservable][{'y':,'x':,'yerr':{'stat':,'sys'}}].
+    #:      'y' is a (1 x p) numpy array of experimental data.
+    #:
+    #:      'x' is a (1 x p) numpy array of numeric index of columns of Y (if exists). In the example data, x is p_T.
+    #:
+    #:      'yerr' is a dictionary with keys 'stat' and 'sys'.
+    #:
+    #:      'stat' is a (1 x p) array of statistical errors.
+    #:
+    #:      'sys' is a (1 x p) array of systematic errors.
+    #: This MUST be changed from None - no built-in default exists. Uncomment the line below default for example.
+    global exp_data_list
+    exp_data_list = AllData["data"]
+
+    #: Experimental covariance matrix.
+    #: Set exp_cov = None to have the script estimate the covariance matrix.
+    #: Example commented below default.
+    global exp_cov
+    exp_cov = AllData["cov"]
+
+
+    #: Observables to emulate as a list of 2-tuples
+    #: ``(obs, [list of subobs])``.
+    global observables
+    observables = AllData["observables"]
 
 def cov(
         system, obs1, subobs1, obs2, subobs2,
@@ -157,7 +239,7 @@ def mvn_loglike(y, cov):
     return -.5*np.dot(y, alpha) - np.log(L.diagonal()).sum()
 
 class LoggingEnsembleSampler(emcee.EnsembleSampler):
-    def run_mcmc(self, X0, nsteps, status=None, **kwargs):
+    def run_mcmc(self, X0, nsteps, picklefile=None, status=None, **kwargs):
         """
         Run MCMC with logging every 'status' steps (default: approx 10% of
         nsteps).
@@ -192,7 +274,7 @@ class Chain:
     system designs have the same parameters and ranges (except for the norms).
 
     """
-    def __init__(self, path=workdir / 'cache' / 'mcmc_chain.hdf'):
+    def __init__(self, path=workdir / 'cache' / 'mcmc_chain.hdf', picklefile=None):
         self.path = path
         self.path.parent.mkdir(exist_ok=True)
 
@@ -215,14 +297,93 @@ class Chain:
 
             yield from klr
         """
+        def getData(picklefile):
+            global AllData
+            AllData = pickle.load((workdir / picklefile).open('rb'))
+
+            #: Sets the collision systems for the entire project,
+            #: where each system is a string of the form
+            #: ``'<projectile 1><projectile 2><beam energy in GeV>'``,
+            #: such as ``'PbPb2760'``, ``'AuAu200'``, ``'pPb5020'``.
+            #: Even if the project uses only a single system,
+            #: this should still be a list of one system string.
+            global systems
+            systems = AllData["systems"]
+
+            #: Design attribute. This is a list of
+            #: strings describing the inputs.
+            #: The default is for the example data.
+            global keys
+            keys = AllData["keys"]
+
+            #: Design attribute. This is a list of input
+            #: labels in LaTeX for plotting.
+            #: The default is for the example data.
+            global labels
+            labels = AllData["labels"]
+
+            #: Design attribute. This is list of tuples of
+            #: (min,max) for each design input.
+            #: The default is for the example data.
+            global ranges
+            ranges = AllData["ranges"]
+
+            #: Design array to use - should be a numpy array.
+            #: Keep at None generate a Latin Hypercube with above (specified) range.
+            #: Design array for example is commented under default.
+            global design_array
+            design_array = AllData["design"]
+
+            #: Dictionary of the model output.
+            #: Form MUST be data_list[system][observable][subobservable][{'Y': ,'x': }].
+            #:     'Y' is an (n x p) numpy array of the output.
+            #:
+            #:     'x' is a (1 x p) numpy array of numeric index of columns of Y (if exists). In the example data, x is p_T.
+            #: This MUST be changed from None - no built-in default exists. Uncomment the line below default for example.
+            global data_list
+            data_list = AllData["model"]
+
+            #: Dictionary for the model validation output
+            #: Must be the same for as the model output dictionary
+            #data_list_val = pickle.load((cachedir / 'model/validation/data_dict_val.p').open('rb'))
+            global data_list_val
+            data_list_val = None
+
+            #: Dictionary of the experimental data.
+            #: Form MUST be exp_data_list[system][observable][subobservable][{'y':,'x':,'yerr':{'stat':,'sys'}}].
+            #:      'y' is a (1 x p) numpy array of experimental data.
+            #:
+            #:      'x' is a (1 x p) numpy array of numeric index of columns of Y (if exists). In the example data, x is p_T.
+            #:
+            #:      'yerr' is a dictionary with keys 'stat' and 'sys'.
+            #:
+            #:      'stat' is a (1 x p) array of statistical errors.
+            #:
+            #:      'sys' is a (1 x p) array of systematic errors.
+            #: This MUST be changed from None - no built-in default exists. Uncomment the line below default for example.
+            global exp_data_list
+            exp_data_list = AllData["data"]
+
+            #: Experimental covariance matrix.
+            #: Set exp_cov = None to have the script estimate the covariance matrix.
+            #: Example commented below default.
+            global exp_cov
+            exp_cov = AllData["cov"]
+
+
+            #: Observables to emulate as a list of 2-tuples
+            #: ``(obs, [list of subobs])``.
+            global observables
+            observables = AllData["observables"]
 
         def keys_labels_range():
-            d = Design(systems[0])
-            klr = zip(d.keys, d.labels, d.range)
+            d = Design(systems[0],labels=labels,ranges=ranges)
+            klr = zip(keys, labels, ranges)
 
             yield from klr
 
             #yield 'model_sys_err', r'$\sigma\ \mathrm{model\ sys}$', (0., .4)
+        getData(picklefile)
         self.keys, self.labels, self.range = map(list, zip(*keys_labels_range()))
 
         # print(self.range)
@@ -367,7 +528,7 @@ class Chain:
         """
         return f(args)
 
-    def run_mcmc(self, nsteps, nburnsteps=None, nwalkers=None, status=None):
+    def run_mcmc(self, nsteps, nburnsteps=None, nwalkers=None, picklefile=None, status=None):
         """
         Run MCMC model calibration.  If the chain already exists, continue from
         the last point, otherwise burn-in and start the chain.
@@ -528,8 +689,13 @@ def main():
         '--status', type=int,
         help='number of steps between logging status'
     )
+    parser.add_argument(
+        '--picklefile', type=str,
+        help='pickle file to read all data'
+    )
+    getData(vars(parser.parse_args())['picklefile'])
 
-    Chain().run_mcmc(**vars(parser.parse_args()))
+    Chain(picklefile=vars(parser.parse_args())['picklefile']).run_mcmc(**vars(parser.parse_args()))
 
 
 if __name__ == '__main__':

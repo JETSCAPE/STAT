@@ -24,11 +24,86 @@ import logging
 from pathlib import Path
 import re
 import subprocess
+import pickle
 
 import numpy as np
 
-from . import cachedir, parse_system, keys, labels, ranges, design_array, systems
+from . import cachedir, parse_system, workdir
+from .reader import keys, labels, ranges, design_array, systems
 
+
+def getData(picklefile):
+    global AllData
+    AllData = pickle.load((workdir / picklefile).open('rb'))
+
+    #: Sets the collision systems for the entire project,
+    #: where each system is a string of the form
+    #: ``'<projectile 1><projectile 2><beam energy in GeV>'``,
+    #: such as ``'PbPb2760'``, ``'AuAu200'``, ``'pPb5020'``.
+    #: Even if the project uses only a single system,
+    #: this should still be a list of one system string.
+    global systems
+    systems = AllData["systems"]
+
+    #: Design attribute. This is a list of
+    #: strings describing the inputs.
+    #: The default is for the example data.
+    global keys
+    keys = AllData["keys"]
+
+    #: Design attribute. This is a list of input
+    #: labels in LaTeX for plotting.
+    #: The default is for the example data.
+    global labels
+    labels = AllData["labels"]
+
+    #: Design attribute. This is list of tuples of
+    #: (min,max) for each design input.
+    #: The default is for the example data.
+    global ranges
+    ranges = AllData["ranges"]
+
+    #: Design array to use - should be a numpy array.
+    #: Keep at None generate a Latin Hypercube with above (specified) range.
+    #: Design array for example is commented under default.
+    global design_array
+    design_array = AllData["design"]
+
+    #: Dictionary of the model output.
+    #: Form MUST be data_list[system][observable][subobservable][{'Y': ,'x': }].
+    #:     'Y' is an (n x p) numpy array of the output.
+    #:
+    #:     'x' is a (1 x p) numpy array of numeric index of columns of Y (if exists). In the example data, x is p_T.
+    #: This MUST be changed from None - no built-in default exists. Uncomment the line below default for example.
+    global data_list
+    data_list = AllData["model"]
+
+    #: Dictionary for the model validation output
+    #: Must be the same for as the model output dictionary
+    #data_list_val = pickle.load((cachedir / 'model/validation/data_dict_val.p').open('rb'))
+    global data_list_val
+    data_list_val = None
+
+    #: Dictionary of the experimental data.
+    #: Form MUST be exp_data_list[system][observable][subobservable][{'y':,'x':,'yerr':{'stat':,'sys'}}].
+    #:      'y' is a (1 x p) numpy array of experimental data.
+    #:
+    #:      'x' is a (1 x p) numpy array of numeric index of columns of Y (if exists). In the example data, x is p_T.
+    #:
+    #:      'yerr' is a dictionary with keys 'stat' and 'sys'.
+    #:
+    #:      'stat' is a (1 x p) array of statistical errors.
+    #:
+    #:      'sys' is a (1 x p) array of systematic errors.
+    #: This MUST be changed from None - no built-in default exists. Uncomment the line below default for example.
+    global exp_data_list
+    exp_data_list = AllData["data"]
+
+    #: Experimental covariance matrix.
+    #: Set exp_cov = None to have the script estimate the covariance matrix.
+    #: Example commented below default.
+    global exp_cov
+    exp_cov = AllData["cov"]
 
 def generate_lhs(npoints, ndim, seed):
     """
@@ -104,13 +179,16 @@ class Design:
     project, if not completely rewritten.
 
     """
-    def __init__(self, system, keys=keys, ranges=ranges,labels=labels, array = design_array, npoints=500, validation=False, seed=None):
+    def __init__(self, system, keys=keys, ranges=ranges,labels=labels, array = design_array, npoints=500, validation=False, seed=None, picklefile=None):
         self.system = system
         self.projectiles, self.beam_energy = parse_system(system)
         self.type = 'validation' if validation else 'main'
 
+        if picklefile: getData(picklefile)
+
         self.keys = keys
         self.range = ranges
+        if labels: self.labels = labels
 
        # # 5.02 TeV has ~1.2x particle production as 2.76 TeV
        # # [https://inspirehep.net/record/1410589]
@@ -140,12 +218,12 @@ class Design:
         #   - wrap normal text with \mathrm{}
         #   - escape spaces
         #   - surround with $$
-        self.labels = [
-            re.sub(r'({[A-Za-z]+})', r'\\mathrm\\1', i)
-            .replace(' ', r'\ ')
-            .join('$$')
-            for i in labels
-        ]
+        #self.labels = [
+        #    re.sub(r'({[A-Za-z]+})', r'\\mathrm\\1', i)
+        #    .replace(' ', r'\ ')
+        #    .join('$$')
+        #    for i in labels
+        #]
 
         self.ndim = len(self.range)
         self.min, self.max = map(np.array, zip(*self.range))
