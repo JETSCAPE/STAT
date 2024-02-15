@@ -352,3 +352,6 @@ class tuneData:
         self.exp_data_list = self.AllData["data"]
         self.exp_cov = self.AllData["cov"]
         self.observables = self.AllData["observables"]
+
+    def dumpData(self):
+        return self.workdir, self.AllData, self.systems, self.keys, self.labels, self.ranges, self.design_array, self.data_list, self.data_list_val, self.exp_data_list, self.exp_cov, self.observables
