@@ -336,3 +336,19 @@ def EstimateCovariance(DataX, DataY, SysLength = {}, SysStrength = {}, ScaleX = 
                 Matrix[x, y] = Matrix[x, y] + DataX["Data"]["yerr"]["sys"][x][IX] * DataY["Data"]["yerr"]["sys"][y][IY] * Factor
 
     return Matrix
+
+
+class tuneData:
+    def __init__(self, picklefile):
+        self.workdir = Path(os.getenv('WORKDIR', '.'))
+        self.AllData = pickle.load((self.workdir / picklefile).open('rb'))
+        self.systems = self.AllData["systems"]
+        self.keys = self.AllData["keys"]
+        self.labels = self.AllData["labels"]
+        self.ranges = self.AllData["ranges"]
+        self.design_array = self.AllData["design"]
+        self.data_list = self.AllData["model"]
+        self.data_list_val = None
+        self.exp_data_list = self.AllData["data"]
+        self.exp_cov = self.AllData["cov"]
+        self.observables = self.AllData["observables"]
