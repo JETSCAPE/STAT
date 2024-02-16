@@ -33,7 +33,7 @@ import h5py
 import numpy as np
 from scipy.linalg import lapack
 from . import workdir
-from .reader import systems, observables, exp_data_list, exp_cov, tuneData
+from .reader import tuneData
 from .design import Design
 from .emulator import emulators
 import pickle
@@ -42,88 +42,8 @@ import os
 import pickle
 from pathlib import Path
 
-
-def getData(picklefile):
-    global AllData
-    AllData = pickle.load((workdir / picklefile).open('rb'))
-
-    #: Sets the collision systems for the entire project,
-    #: where each system is a string of the form
-    #: ``'<projectile 1><projectile 2><beam energy in GeV>'``,
-    #: such as ``'PbPb2760'``, ``'AuAu200'``, ``'pPb5020'``.
-    #: Even if the project uses only a single system,
-    #: this should still be a list of one system string.
-    global systems
-    systems = AllData["systems"]
-
-    #: Design attribute. This is a list of
-    #: strings describing the inputs.
-    #: The default is for the example data.
-    global keys
-    keys = AllData["keys"]
-
-    #: Design attribute. This is a list of input
-    #: labels in LaTeX for plotting.
-    #: The default is for the example data.
-    global labels
-    labels = AllData["labels"]
-
-    #: Design attribute. This is list of tuples of
-    #: (min,max) for each design input.
-    #: The default is for the example data.
-    global ranges
-    ranges = AllData["ranges"]
-
-    #: Design array to use - should be a numpy array.
-    #: Keep at None generate a Latin Hypercube with above (specified) range.
-    #: Design array for example is commented under default.
-    global design_array
-    design_array = AllData["design"]
-
-    #: Dictionary of the model output.
-    #: Form MUST be data_list[system][observable][subobservable][{'Y': ,'x': }].
-    #:     'Y' is an (n x p) numpy array of the output.
-    #:
-    #:     'x' is a (1 x p) numpy array of numeric index of columns of Y (if exists). In the example data, x is p_T.
-    #: This MUST be changed from None - no built-in default exists. Uncomment the line below default for example.
-    global data_list
-    data_list = AllData["model"]
-
-    #: Dictionary for the model validation output
-    #: Must be the same for as the model output dictionary
-    #data_list_val = pickle.load((cachedir / 'model/validation/data_dict_val.p').open('rb'))
-    global data_list_val
-    data_list_val = None
-
-    #: Dictionary of the experimental data.
-    #: Form MUST be exp_data_list[system][observable][subobservable][{'y':,'x':,'yerr':{'stat':,'sys'}}].
-    #:      'y' is a (1 x p) numpy array of experimental data.
-    #:
-    #:      'x' is a (1 x p) numpy array of numeric index of columns of Y (if exists). In the example data, x is p_T.
-    #:
-    #:      'yerr' is a dictionary with keys 'stat' and 'sys'.
-    #:
-    #:      'stat' is a (1 x p) array of statistical errors.
-    #:
-    #:      'sys' is a (1 x p) array of systematic errors.
-    #: This MUST be changed from None - no built-in default exists. Uncomment the line below default for example.
-    global exp_data_list
-    exp_data_list = AllData["data"]
-
-    #: Experimental covariance matrix.
-    #: Set exp_cov = None to have the script estimate the covariance matrix.
-    #: Example commented below default.
-    global exp_cov
-    exp_cov = AllData["cov"]
-
-
-    #: Observables to emulate as a list of 2-tuples
-    #: ``(obs, [list of subobs])``.
-    global observables
-    observables = AllData["observables"]
-
 def cov(
-        system, obs1, subobs1, obs2, subobs2,
+        exp_data_list, system, obs1, subobs1, obs2, subobs2,
         stat_frac=1e-4, sys_corr_length=100, cross_factor=.8,
         corr_obs={
             frozenset({'dNch_deta', 'dET_deta', 'dN_dy'}),
@@ -313,17 +233,18 @@ class Chain:
         self.keys = tunedata.keys
         self.labels = tunedata.labels
         self.range = tunedata.ranges
+        self.systems = tunedata.systems
 
         # print(self.range)
         self.ndim = len(self.range)
         self.min, self.max = map(np.array, zip(*self.range))
 
-        self._common_indices = list(range(len(systems), self.ndim))
+        self._common_indices = list(range(len(self.systems), self.ndim))
 
         self._slices = {}
         self._expt_y = {}
         self._expt_cov = {}
-        self.observables = observables
+        self.observables = tunedata.observables
         # pre-compute the experimental data vectors and covariance matrices
         for sys, sysdata in tunedata.exp_data_list.items():
             nobs = 0
@@ -351,19 +272,19 @@ class Chain:
             self._expt_cov[sys] = np.zeros((nobs, nobs))
 
             for obs1, subobs1, slc1 in self._slices[sys]:
-                self._expt_y[sys][slc1] = exp_data_list[sys][obs1][subobs1]['y']
-                if exp_cov is None:
+                self._expt_y[sys][slc1] = tunedata.exp_data_list[sys][obs1][subobs1]['y']
+                if tunedata.exp_cov is None:
                     for obs2, subobs2, slc2 in self._slices[sys]:
                         self._expt_cov[sys][slc1, slc2] = cov(
-                            sys, obs1, subobs1, obs2, subobs2
+                            tunedata.exp_cov, sys, obs1, subobs1, obs2, subobs2
                         )
 
             #Allows user to specify experimental covariance matrix in __init__.py
-            if exp_cov is not None:
+            if tunedata.exp_cov is not None:
                 for obs1, subobs1, slc1 in self._slices[sys]:
                     for obs2, subobs2, slc2 in self._slices[sys]:
-                        if exp_cov[sys][(obs1, subobs1)][(obs2, subobs2)] is not None:
-                            self._expt_cov[sys][slc1, slc2] = exp_cov[sys][(obs1, subobs1)][(obs2, subobs2)]
+                        if tunedata.exp_cov[sys][(obs1, subobs1)][(obs2, subobs2)] is not None:
+                            self._expt_cov[sys][slc1, slc2] = tunedata.exp_cov[sys][(obs1, subobs1)][(obs2, subobs2)]
 
             # print(self._expt_y[sys])
             # print(self._expt_cov[sys])
@@ -377,7 +298,7 @@ class Chain:
                 X[:, ],#[n] + self._common_indices],
                 **kwargs
             )
-            for n, sys in enumerate(systems)
+            for n, sys in enumerate(self.systems)
         }
 
     def log_posterior(self, X, extra_std_prior_scale=0.05, model_sys_error = False):
@@ -411,7 +332,7 @@ class Chain:
                 X[inside], return_cov=True, extra_std=extra_std
             )
 
-            for sys in systems:
+            for sys in self.systems:
                 nobs = self._expt_y[sys].size
                 # allocate difference (model - expt) and covariance arrays
                 dY = np.empty((nsamples, nobs))
@@ -621,9 +542,9 @@ def main():
         '--picklefile', type=str,
         help='pickle file to read all data'
     )
-    getData(vars(parser.parse_args())['picklefile'])
 
-    Chain(picklefile=vars(parser.parse_args())['picklefile']).run_mcmc(**vars(parser.parse_args()))
+    picklefile = vars(parser.parse_args())['picklefile']
+    Chain(picklefile=picklefile).run_mcmc(**vars(parser.parse_args()))
 
 
 if __name__ == '__main__':
