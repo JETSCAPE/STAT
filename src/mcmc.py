@@ -218,17 +218,6 @@ class Chain:
             yield from klr
         """
         
-        """
-        def keys_labels_range():
-            d = Design(systems[0],labels=labels,ranges=ranges)
-            klr = zip(keys, labels, ranges)
-
-            yield from klr
-
-            #yield 'model_sys_err', r'$\sigma\ \mathrm{model\ sys}$', (0., .4)
-        #getData(picklefile)
-        self.keys, self.labels, self.range = map(list, zip(*keys_labels_range()))
-        """
         tunedata = tuneData(picklefile)
         self.keys = tunedata.keys
         self.labels = tunedata.labels
