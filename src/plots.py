@@ -28,6 +28,7 @@ import h5py
 import hsluv
 import numpy as np
 import matplotlib.pyplot as plt
+import pickle
 from matplotlib import lines
 from matplotlib import patches
 from matplotlib import ticker
@@ -39,13 +40,26 @@ from sklearn.gaussian_process import kernels
 from sklearn.mixture import GaussianMixture
 from functools import wraps
 
-from . import workdir, systems, parse_system, mcmc, data_list, exp_data_list#, data_list_val#, model, expt
+from . import workdir, parse_system, mcmc#, data_list_val#, model, expt
 from .design import Design
 from .emulator import emulators
+from .reader import tuneData
 
+#empty variables for use later
+AllData = None
+systems = None
+keys = None
+labels = None
+ranges = None
+design_array = None
+data_list = None
+data_list_val = None
+exp_data_list = None
+exp_cov = None
+observables = None
+default_system = None
 
-default_system = systems[0]
-
+#Plot formatting parameters
 fontsmall, fontnormal, fontlarge = 5, 6, 7
 offblack = '#262626'
 aspect = 1/1.618
@@ -312,7 +326,7 @@ def _observables(posterior=False):
     )
     alpha_val = 1
     if posterior:
-        samples = mcmc.Chain().samples(100)
+        samples = mcmc.Chain(picklefile=picklefile).samples(100)
         alpha_val = 0.3
 
     if len(systems)==1 & len(plots)==1:
@@ -579,7 +593,7 @@ def find_map():
     """
     from scipy.optimize import minimize
 
-    chain = mcmc.Chain()
+    chain = mcmc.Chain(picklefile=picklefile)
 
     fixed_params = {
         'trento_p': 0.,
@@ -756,7 +770,7 @@ def _posterior(
     Triangle plot of posterior marginal and joint distributions.
 
     """
-    chain = mcmc.Chain()
+    chain = mcmc.Chain(picklefile=picklefile)
 
     if params is None and ignore is None:
         params = set(chain.keys)
@@ -877,7 +891,7 @@ def posterior_p():
     plt.figure(figsize=(.65*textwidth, .25*textwidth))
     ax = plt.axes()
 
-    data = mcmc.Chain().load('trento_p').ravel()
+    data = mcmc.Chain(picklefile=picklefile).load('trento_p').ravel()
 
     counts, edges = np.histogram(data, bins=50)
     x = (edges[1:] + edges[:-1]) / 2
@@ -948,7 +962,7 @@ def _region_shear(mode='full', scale=.6):
     def etas(T, m=0, s=0, c=0):
         return m + s*(T - Tc)*(T/Tc)**c
 
-    chain = mcmc.Chain()
+    chain = mcmc.Chain(picklefile=picklefile)
 
     rangedict = dict(zip(chain.keys, chain.range))
     ekeys = ['etas_' + k for k in ['min', 'slope', 'curv']]
@@ -1030,7 +1044,7 @@ def _region_bulk(mode='full', scale=.6):
     def zetas(T, zetas_max=0, zetas_width=1):
         return zetas_max / (1 + ((T - Tc)/zetas_width)**2)
 
-    chain = mcmc.Chain()
+    chain = mcmc.Chain(picklefile=picklefile)
 
     keys, ranges = map(list, zip(*(
         i for i in zip(chain.keys, chain.range)
@@ -1797,6 +1811,7 @@ def diag_emu(system=default_system):
     and shape of predictions are reasonable.
 
     """
+    if system == '' or system == None: system = default_system
     gps = emulators[system].gps
     nrows = len(gps)
     ncols = gps[0].X_train_.shape[1]
@@ -1810,7 +1825,7 @@ def diag_emu(system=default_system):
     ymax = np.ceil(max(np.fabs(g.y_train_).max() for g in gps))
     ylim = (-ymax, ymax)
 
-    design = Design(system)
+    design = Design(system, keys=keys, ranges=ranges, labels=labels, picklefile=picklefile)
 
     for ny, (gp, row) in enumerate(zip(gps, axes)):
         y = gp.y_train_
@@ -1865,7 +1880,18 @@ if __name__ == '__main__':
         'plots', nargs='*', type=arg_to_plot, metavar='PLOT',
         help='{} (default: all)'.format(', '.join(choices).join('{}'))
     )
+    parser.add_argument(
+        '--picklefile', type=str,
+        help='pickle file to read all data'
+    )
     args = parser.parse_args()
+
+    #getting tune data
+    global picklefile
+    picklefile = vars(args)['picklefile']
+    tunedata = tuneData(picklefile)
+    workdir, AllData, systems, keys, labels, ranges, design_array, data_list, data_list_val, exp_data_list, exp_cov, observables = tunedata.dumpData()
+    default_system = systems[0]
 
     if args.plots:
         for p in args.plots:

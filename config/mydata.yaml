@@ -1,0 +1,21 @@
+# Configuration parameters to download experimental data and/or edit its format,
+# used by the script get_expdata.py.
+#
+# You can specify one or more blocks for HEPData, PHENIX, or EditData or any combination,
+# and they will all be processed according to their appropriate scripts, steered by get_expdata.py.
+
+# HEPData
+# Any top-level entry with "hepdata" in the name will be processed by get_hepdata.py
+# Each variable consists of a list with one entry per dataset (exceptions: filepath,data_vrs,data_str)
+# You can provide all hepdata entries in a list (as in "hepdata" block), or you can
+# provide separate config entries for one or more hepdata entries (as in "hepdata_CMS_HadronRAA_010" block).
+#-----------------------------------------------------------------------------------------------
+hepdata:
+  filepath: '/scratch/user/cameron.parker/projects/STAT/input/vac-data/'
+  data_vrs: 'Version 1.0'
+  data_str: 'Data'
+  data_url: ['https://www.hepdata.net/download/table/ins1088823/Table%201/1/yaml']
+  data_doi: ['https://doi.org/10.17182/hepdata.58980']
+  data_exp: ['CMS']
+  data_sys: ['PbPb5020']
+  data_meas: ['test']

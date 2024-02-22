@@ -24,11 +24,12 @@ import logging
 from pathlib import Path
 import re
 import subprocess
+import pickle
 
 import numpy as np
 
-from . import cachedir, parse_system, keys, labels, ranges, design_array, systems
-
+from . import cachedir, parse_system, workdir
+from .reader import keys, labels, ranges, design_array, systems
 
 def generate_lhs(npoints, ndim, seed):
     """
@@ -104,13 +105,14 @@ class Design:
     project, if not completely rewritten.
 
     """
-    def __init__(self, system, keys=keys, ranges=ranges,labels=labels, array = design_array, npoints=500, validation=False, seed=None):
+    def __init__(self, system, keys=keys, ranges=ranges,labels=labels, array = design_array, npoints=500, validation=False, seed=None, picklefile=None):
         self.system = system
         self.projectiles, self.beam_energy = parse_system(system)
         self.type = 'validation' if validation else 'main'
 
         self.keys = keys
         self.range = ranges
+        if labels: self.labels = labels
 
        # # 5.02 TeV has ~1.2x particle production as 2.76 TeV
        # # [https://inspirehep.net/record/1410589]
@@ -140,12 +142,12 @@ class Design:
         #   - wrap normal text with \mathrm{}
         #   - escape spaces
         #   - surround with $$
-        self.labels = [
-            re.sub(r'({[A-Za-z]+})', r'\\mathrm\\1', i)
-            .replace(' ', r'\ ')
-            .join('$$')
-            for i in labels
-        ]
+        #self.labels = [
+        #    re.sub(r'({[A-Za-z]+})', r'\\mathrm\\1', i)
+        #    .replace(' ', r'\ ')
+        #    .join('$$')
+        #    for i in labels
+        #]
 
         self.ndim = len(self.range)
         self.min, self.max = map(np.array, zip(*self.range))

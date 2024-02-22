@@ -24,12 +24,9 @@ def get_hepdata(configFileEntry = None):
   data_str = configFileEntry['data_str']
   data_url = configFileEntry['data_url']
   data_doi = configFileEntry['data_doi']
-  data_fig = configFileEntry['data_fig']
   data_exp = configFileEntry['data_exp']
   data_sys = configFileEntry['data_sys']
   data_meas = configFileEntry['data_meas']
-  data_cent = configFileEntry['data_cent']
-  data_year = configFileEntry['data_year']
 
   # Create directory for filepath, if it doesn't exist
   if not filepath.endswith('/'):
@@ -49,7 +46,6 @@ def get_hepdata(configFileEntry = None):
     data_header += '# Source ' + data_url[i] + '\n'
     data_header += '# Experiment ' + data_exp[i] + '\n'
     data_header += '# System ' + data_sys[i] + '\n'
-    data_header += '# Centrality ' + data_cent[i] + '\n'
     # Fill the remaining header entries from hepdata
 
     # Reset data lists
@@ -61,7 +57,7 @@ def get_hepdata(configFileEntry = None):
     # Fetch yaml_data from hepdata url
     response = urlopen(data_url[i],context=context)
     content  = response.read().decode('utf-8')
-    yaml_data = yaml.load(content)
+    yaml_data = yaml.safe_load(content)
 
     # Fetch XY names from headers
     xname = yaml_data['independent_variables'][0]['header']['name']
@@ -113,7 +109,7 @@ def get_hepdata(configFileEntry = None):
       data_lines += str(xlo[j]) + ' ' + str(xhi[j]) + ' ' + str(yval[j]) + errs[j] + '\n'
 
     # Create filename
-    namelist = [ data_str,data_exp[i],data_sys[i],data_meas[i],data_cent[i],data_year[i] ]
+    namelist = [data_str,data_exp[i],data_sys[i],data_meas[i]]
     filename = filepath + '_'.join(namelist) + '.dat'
 
     print('Writing ',filename)
