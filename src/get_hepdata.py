@@ -27,6 +27,7 @@ def get_hepdata(configFileEntry = None):
   data_exp = configFileEntry['data_exp']
   data_sys = configFileEntry['data_sys']
   data_meas = configFileEntry['data_meas']
+  data_index = configFileEntry['data_index']
 
   # Create directory for filepath, if it doesn't exist
   if not filepath.endswith('/'):
@@ -57,7 +58,7 @@ def get_hepdata(configFileEntry = None):
     # Fetch yaml_data from hepdata url
     response = urlopen(data_url[i],context=context)
     content  = response.read().decode('utf-8')
-    yaml_data = yaml.safe_load(content)
+    yaml_data = yaml.full_load(content)
 
     # Fetch XY names from headers
     xname = yaml_data['independent_variables'][0]['header']['name']
@@ -66,7 +67,7 @@ def get_hepdata(configFileEntry = None):
 
     # Fetch error labels from first entry to create label for header
     error_label = ''
-    first_entry = yaml_data['dependent_variables'][0]['values'][0]
+    first_entry = yaml_data['dependent_variables'][data_index[i]]['values'][0]
     for err in first_entry['errors']:
       error_label += err['label']+',low ' + err['label']+',high '
     data_header +='# Label xmin xmax y ' + error_label + '\n'
@@ -78,7 +79,7 @@ def get_hepdata(configFileEntry = None):
       # print(x['low'],x['high'])
 
     # print(yaml_data['dependent_variables'][0]['values'])
-    for v in yaml_data['dependent_variables'][0]['values']:
+    for v in yaml_data['dependent_variables'][data_index[i]]['values']:
       # print(v['value'])
       yval.append(v['value'])
 

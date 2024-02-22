@@ -10,12 +10,46 @@
 # You can provide all hepdata entries in a list (as in "hepdata" block), or you can
 # provide separate config entries for one or more hepdata entries (as in "hepdata_CMS_HadronRAA_010" block).
 #-----------------------------------------------------------------------------------------------
-hepdata:
+hepdata1:
   filepath: '/scratch/user/cameron.parker/projects/STAT/input/vac-data/'
   data_vrs: 'Version 1.0'
   data_str: 'Data'
   data_url: ['https://www.hepdata.net/download/table/ins1088823/Table%201/1/yaml']
   data_doi: ['https://doi.org/10.17182/hepdata.58980']
   data_exp: ['CMS']
-  data_sys: ['PbPb5020']
-  data_meas: ['test']
+  data_sys: ['PrPr2760']
+  data_meas: ['charged-hads']
+  data_index: [0]
+
+hepdata2:
+  filepath: '/scratch/user/cameron.parker/projects/STAT/input/vac-data/'
+  data_vrs: 'Version 1.0'
+  data_str: 'Data'
+  data_url: ['https://www.hepdata.net/download/table/ins1487278/Table%204/1/yaml']
+  data_doi: ['https://doi.org/10.17182/hepdata.77601']
+  data_exp: ['CMS']
+  data_sys: ['PrPr2760']
+  data_meas: ['jets-2']
+  data_index: [0]
+
+hepdata3:
+  filepath: '/scratch/user/cameron.parker/projects/STAT/input/vac-data/'
+  data_vrs: 'Version 1.0'
+  data_str: 'Data'
+  data_url: ['https://www.hepdata.net/download/table/ins1487278/Table%204/1/yaml']
+  data_doi: ['https://doi.org/10.17182/hepdata.77601']
+  data_exp: ['CMS']
+  data_sys: ['PrPr2760']
+  data_meas: ['jets-3']
+  data_index: [1]
+
+hepdata3:
+  filepath: '/scratch/user/cameron.parker/projects/STAT/input/vac-data/'
+  data_vrs: 'Version 1.0'
+  data_str: 'Data'
+  data_url: ['https://www.hepdata.net/download/table/ins1487278/Table%204/1/yaml']
+  data_doi: ['https://doi.org/10.17182/hepdata.77601']
+  data_exp: ['CMS']
+  data_sys: ['PrPr2760']
+  data_meas: ['jets-4']
+  data_index: [2]
