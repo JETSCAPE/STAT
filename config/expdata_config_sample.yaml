@@ -36,6 +36,46 @@ hepdata_CMS_HadronRAA_010:
   data_cent: ['00to10']
   data_year: ['2017']
 
+# Example selecting on additional metadata
+## 5020 GeV ALICE, h+-
+hepdata_ALICE_hadronRAA_5020:
+  filepath: "input/MATTERLBT1-test-3/"
+  data_vrs: "Version 1.0"
+  data_str: "Data"
+  data_url: [
+    'https://www.hepdata.net/download/table/ins1657384/Table%208/1/yaml',
+    'https://www.hepdata.net/download/table/ins1657384/Table%208/1/yaml',
+    'https://www.hepdata.net/download/table/ins1657384/Table%208/1/yaml',
+    'https://www.hepdata.net/download/table/ins1657384/Table%208/1/yaml',
+    'https://www.hepdata.net/download/table/ins1657384/Table%208/1/yaml',
+    'https://www.hepdata.net/download/table/ins1657384/Table%208/1/yaml'
+  ]
+  data_doi: [
+    'https://doi.org/10.1007/JHEP11%282018%29013',
+    'https://doi.org/10.1007/JHEP11%282018%29013',
+    'https://doi.org/10.1007/JHEP11%282018%29013',
+    'https://doi.org/10.1007/JHEP11%282018%29013',
+    'https://doi.org/10.1007/JHEP11%282018%29013',
+    'https://doi.org/10.1007/JHEP11%282018%29013'
+  ]
+  data_fig: ['figure 6', 'figure 6', 'figure 6', 'figure 6', 'figure 6', 'figure 6']
+  data_exp: ['ALICE', 'ALICE', 'ALICE', 'ALICE', 'ALICE', 'ALICE']
+  data_sys: ['PbPb5020', 'PbPb5020', 'PbPb5020', 'PbPb5020', 'PbPb5020', 'PbPb5020']
+  # Selects the column based on the provided metadata.
+  # The field name is 'CENT`. Each value provided below has to match **only one** of
+  # the values in the row.
+  data_qualifiers: [
+    {name: 'CENT', value: '0-5 pct'},
+    {name: 'CENT', value: '5-10 pct'},
+    {name: 'CENT', value: '10-20 pct'},
+    {name: 'CENT', value: '20-30 pct'},
+    {name: 'CENT', value: '30-40 pct'},
+    {name: 'CENT', value: '40-50 pct'}
+  ]
+  data_meas: ['RAACharged', 'RAACharged', 'RAACharged', 'RAACharged', 'RAACharged', 'RAACharged']
+  data_cent: ['00to05', '05to10', '10to20', '20to30', '30to40', '40to50']
+  data_year: ['2018', '2018', '2018', '2018', '2018', '2018']
+
 # PHENIX Data
 # Any top-level entry with "phenix" in the name will be processed by get_phenix.py
 #-----------------------------------------------------------------------------------------------
