@@ -338,7 +338,7 @@ def EstimateCovariance(DataX, DataY, SysLength = {}, SysStrength = {}, ScaleX = 
     return Matrix
 
 
-class tuneData:
+class TuneData:
     def __init__(self, picklefile):
         self.workdir = Path(os.getenv('WORKDIR', '.'))
         self.AllData = pickle.load((self.workdir / picklefile).open('rb'))
