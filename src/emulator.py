@@ -28,7 +28,8 @@ from sklearn.gaussian_process import GaussianProcessRegressor as GPR
 from sklearn.gaussian_process import kernels
 from sklearn.preprocessing import StandardScaler
 
-from . import cachedir, lazydict, observables, data_list#model
+from . import cachedir, lazydict
+from .reader import data_list,observables
 from .design import Design
 
 

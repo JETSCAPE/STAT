@@ -32,16 +32,18 @@ import emcee
 import h5py
 import numpy as np
 from scipy.linalg import lapack
-from . import workdir, systems, observables, exp_data_list, exp_cov#, expt
+from . import workdir
+from .reader import TuneData
 from .design import Design
 from .emulator import emulators
 import pickle
 from scipy.stats import multivariate_normal
-
-
+import os
+import pickle
+from pathlib import Path
 
 def cov(
-        system, obs1, subobs1, obs2, subobs2,
+        exp_data_list, system, obs1, subobs1, obs2, subobs2,
         stat_frac=1e-4, sys_corr_length=100, cross_factor=.8,
         corr_obs={
             frozenset({'dNch_deta', 'dET_deta', 'dN_dy'}),
@@ -157,7 +159,7 @@ def mvn_loglike(y, cov):
     return -.5*np.dot(y, alpha) - np.log(L.diagonal()).sum()
 
 class LoggingEnsembleSampler(emcee.EnsembleSampler):
-    def run_mcmc(self, X0, nsteps, status=None, **kwargs):
+    def run_mcmc(self, X0, nsteps, picklefile=None, status=None, **kwargs):
         """
         Run MCMC with logging every 'status' steps (default: approx 10% of
         nsteps).
@@ -192,7 +194,7 @@ class Chain:
     system designs have the same parameters and ranges (except for the norms).
 
     """
-    def __init__(self, path=workdir / 'cache' / 'mcmc_chain.hdf'):
+    def __init__(self, path=workdir / 'cache' / 'mcmc_chain.hdf', picklefile=None):
         self.path = path
         self.path.parent.mkdir(exist_ok=True)
 
@@ -215,28 +217,25 @@ class Chain:
 
             yield from klr
         """
-
-        def keys_labels_range():
-            d = Design(systems[0])
-            klr = zip(d.keys, d.labels, d.range)
-
-            yield from klr
-
-            #yield 'model_sys_err', r'$\sigma\ \mathrm{model\ sys}$', (0., .4)
-        self.keys, self.labels, self.range = map(list, zip(*keys_labels_range()))
+        
+        tunedata = TuneData(picklefile)
+        self.keys = tunedata.keys
+        self.labels = tunedata.labels
+        self.range = tunedata.ranges
+        self.systems = tunedata.systems
 
         # print(self.range)
         self.ndim = len(self.range)
         self.min, self.max = map(np.array, zip(*self.range))
 
-        self._common_indices = list(range(len(systems), self.ndim))
+        self._common_indices = list(range(len(self.systems), self.ndim))
 
         self._slices = {}
         self._expt_y = {}
         self._expt_cov = {}
-        self.observables = observables
+        self.observables = tunedata.observables
         # pre-compute the experimental data vectors and covariance matrices
-        for sys, sysdata in exp_data_list.items():
+        for sys, sysdata in tunedata.exp_data_list.items():
             nobs = 0
 
             self._slices[sys] = []
@@ -262,19 +261,19 @@ class Chain:
             self._expt_cov[sys] = np.zeros((nobs, nobs))
 
             for obs1, subobs1, slc1 in self._slices[sys]:
-                self._expt_y[sys][slc1] = exp_data_list[sys][obs1][subobs1]['y']
-                if exp_cov is None:
+                self._expt_y[sys][slc1] = tunedata.exp_data_list[sys][obs1][subobs1]['y']
+                if tunedata.exp_cov is None:
                     for obs2, subobs2, slc2 in self._slices[sys]:
                         self._expt_cov[sys][slc1, slc2] = cov(
-                            sys, obs1, subobs1, obs2, subobs2
+                            tunedata.exp_cov, sys, obs1, subobs1, obs2, subobs2
                         )
 
             #Allows user to specify experimental covariance matrix in __init__.py
-            if exp_cov is not None:
+            if tunedata.exp_cov is not None:
                 for obs1, subobs1, slc1 in self._slices[sys]:
                     for obs2, subobs2, slc2 in self._slices[sys]:
-                        if exp_cov[sys][(obs1, subobs1)][(obs2, subobs2)] is not None:
-                            self._expt_cov[sys][slc1, slc2] = exp_cov[sys][(obs1, subobs1)][(obs2, subobs2)]
+                        if tunedata.exp_cov[sys][(obs1, subobs1)][(obs2, subobs2)] is not None:
+                            self._expt_cov[sys][slc1, slc2] = tunedata.exp_cov[sys][(obs1, subobs1)][(obs2, subobs2)]
 
             # print(self._expt_y[sys])
             # print(self._expt_cov[sys])
@@ -288,7 +287,7 @@ class Chain:
                 X[:, ],#[n] + self._common_indices],
                 **kwargs
             )
-            for n, sys in enumerate(systems)
+            for n, sys in enumerate(self.systems)
         }
 
     def log_posterior(self, X, extra_std_prior_scale=0.05, model_sys_error = False):
@@ -322,7 +321,7 @@ class Chain:
                 X[inside], return_cov=True, extra_std=extra_std
             )
 
-            for sys in systems:
+            for sys in self.systems:
                 nobs = self._expt_y[sys].size
                 # allocate difference (model - expt) and covariance arrays
                 dY = np.empty((nsamples, nobs))
@@ -367,7 +366,7 @@ class Chain:
         """
         return f(args)
 
-    def run_mcmc(self, nsteps, nburnsteps=None, nwalkers=None, status=None):
+    def run_mcmc(self, nsteps, nburnsteps=None, nwalkers=None, picklefile=None, status=None):
         """
         Run MCMC model calibration.  If the chain already exists, continue from
         the last point, otherwise burn-in and start the chain.
@@ -528,8 +527,13 @@ def main():
         '--status', type=int,
         help='number of steps between logging status'
     )
+    parser.add_argument(
+        '--picklefile', type=str,
+        help='pickle file to read all data'
+    )
 
-    Chain().run_mcmc(**vars(parser.parse_args()))
+    picklefile = vars(parser.parse_args())['picklefile']
+    Chain(picklefile=picklefile).run_mcmc(**vars(parser.parse_args()))
 
 
 if __name__ == '__main__':
