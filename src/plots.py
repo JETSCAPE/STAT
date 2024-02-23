@@ -43,7 +43,7 @@ from functools import wraps
 from . import workdir, parse_system, mcmc#, data_list_val#, model, expt
 from .design import Design
 from .emulator import emulators
-from .reader import tuneData
+from .reader import TuneData
 
 #empty variables for use later
 AllData = None
@@ -1889,7 +1889,7 @@ if __name__ == '__main__':
     #getting tune data
     global picklefile
     picklefile = vars(args)['picklefile']
-    tunedata = tuneData(picklefile)
+    tunedata = TuneData(picklefile)
     workdir, AllData, systems, keys, labels, ranges, design_array, data_list, data_list_val, exp_data_list, exp_cov, observables = tunedata.dumpData()
     default_system = systems[0]
 

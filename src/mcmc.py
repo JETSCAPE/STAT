@@ -33,7 +33,7 @@ import h5py
 import numpy as np
 from scipy.linalg import lapack
 from . import workdir
-from .reader import tuneData
+from .reader import TuneData
 from .design import Design
 from .emulator import emulators
 import pickle
@@ -218,7 +218,7 @@ class Chain:
             yield from klr
         """
         
-        tunedata = tuneData(picklefile)
+        tunedata = TuneData(picklefile)
         self.keys = tunedata.keys
         self.labels = tunedata.labels
         self.range = tunedata.ranges
