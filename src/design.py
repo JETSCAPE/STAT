@@ -142,12 +142,12 @@ class Design:
         #   - wrap normal text with \mathrm{}
         #   - escape spaces
         #   - surround with $$
-        #self.labels = [
-        #    re.sub(r'({[A-Za-z]+})', r'\\mathrm\\1', i)
-        #    .replace(' ', r'\ ')
-        #    .join('$$')
-        #    for i in labels
-        #]
+        self.labels = [
+            re.sub(r'({[A-Za-z]+})', r'\\mathrm\\1', i)
+            .replace(' ', r'\ ')
+            .join('$$')
+            for i in labels
+        ]
 
         self.ndim = len(self.range)
         self.min, self.max = map(np.array, zip(*self.range))
