@@ -1,0 +1,99 @@
+# Configuration parameters to download experimental data and/or edit its format,
+# used by the script get_expdata.py.
+#
+# You can specify one or more blocks for HEPData, PHENIX, or EditData or any combination,
+# and they will all be processed according to their appropriate scripts, steered by get_expdata.py.
+
+# HEPData
+# Any top-level entry with "hepdata" in the name will be processed by get_hepdata.py
+# Each variable consists of a list with one entry per dataset (exceptions: filepath,data_vrs,data_str)
+# You can provide all hepdata entries in a list (as in "hepdata" block), or you can
+# provide separate config entries for one or more hepdata entries (as in "hepdata_CMS_HadronRAA_010" block).
+#-----------------------------------------------------------------------------------------------
+hepdatathrust:
+  filepath: '/scratch/user/cameron.parker/projects/STAT/input/vac-data/'
+  data_vrs: 'Version 1.0'
+  data_str: 'Data'
+  data_url: ['https://www.hepdata.net/download/table/ins428072/Table%203/1/yaml']
+  data_doi: ['https://doi.org/10.17182/hepdata.47582']
+  data_exp: ['ALEPH']
+  data_sys: ['EpEm91']
+  data_meas: ['thrust']
+  data_index: [0]
+
+hepdatacharged-xp:
+  filepath: '/scratch/user/cameron.parker/projects/STAT/input/vac-data/'
+  data_vrs: 'Version 1.0'
+  data_str: 'Data'
+  data_url: ['https://www.hepdata.net/download/table/ins428072/Table%209/1/yaml']
+  data_doi: ['https://doi.org/10.17182/hepdata.47582']
+  data_exp: ['ALEPH']
+  data_sys: ['EpEm91']
+  data_meas: ['charged-xp']
+  data_index: [0]
+
+hepdatapion-xp:
+  filepath: '/scratch/user/cameron.parker/projects/STAT/input/vac-data/'
+  data_vrs: 'Version 1.0'
+  data_str: 'Data'
+  data_url: ['https://www.hepdata.net/download/table/ins428072/Table%2025/1/yaml']
+  data_doi: ['https://doi.org/10.17182/hepdata.47582']
+  data_exp: ['ALEPH']
+  data_sys: ['EpEm91']
+  data_meas: ['pion-xp']
+  data_index: [0]
+
+hepdatakaon-xp:
+  filepath: '/scratch/user/cameron.parker/projects/STAT/input/vac-data/'
+  data_vrs: 'Version 1.0'
+  data_str: 'Data'
+  data_url: ['https://www.hepdata.net/download/table/ins428072/Table%2026/1/yaml']
+  data_doi: ['https://doi.org/10.17182/hepdata.47582']
+  data_exp: ['ALEPH']
+  data_sys: ['EpEm91']
+  data_meas: ['kaon-xp']
+  data_index: [0]
+
+hepdataproton-xp:
+  filepath: '/scratch/user/cameron.parker/projects/STAT/input/vac-data/'
+  data_vrs: 'Version 1.0'
+  data_str: 'Data'
+  data_url: ['https://www.hepdata.net/download/table/ins428072/Table%2027/1/yaml']
+  data_doi: ['https://doi.org/10.17182/hepdata.47582']
+  data_exp: ['ALEPH']
+  data_sys: ['EpEm91']
+  data_meas: ['proton-xp']
+  data_index: [0]
+
+hepdatamultiplicity:
+  filepath: '/scratch/user/cameron.parker/projects/STAT/input/vac-data/'
+  data_vrs: 'Version 1.0'
+  data_str: 'Data'
+  data_url: ['https://www.hepdata.net/download/table/ins428072/Table%2027/1/yaml']
+  data_doi: ['https://doi.org/10.17182/hepdata.47582']
+  data_exp: ['ALEPH']
+  data_sys: ['EpEm91']
+  data_meas: ['mult']
+  data_index: [0]
+
+hepdataIncJets:
+  filepath: '/scratch/user/cameron.parker/projects/STAT/input/vac-data/'
+  data_vrs: 'Version 1.0'
+  data_str: 'Data'
+  data_url: ['https://www.hepdata.net/download/table/ins1972346/InclusiveJetEnergy/1/yaml']
+  data_doi: ['https://doi.org/10.17182/hepdata.1972346']
+  data_exp: ['ALEPH']
+  data_sys: ['EpEm91']
+  data_meas: ['inc-jets']
+  data_index: [0]
+
+hepdataDiJets:
+  filepath: '/scratch/user/cameron.parker/projects/STAT/input/vac-data/'
+  data_vrs: 'Version 1.0'
+  data_str: 'Data'
+  data_url: ['https://www.hepdata.net/download/table/ins1972346/LeadingDiJetEnergy/1/yaml']
+  data_doi: ['https://doi.org/10.17182/hepdata.1972346']
+  data_exp: ['ALEPH']
+  data_sys: ['EpEm91']
+  data_meas: ['di-jets']
+  data_index: [0]
