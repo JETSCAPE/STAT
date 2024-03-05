@@ -10,7 +10,7 @@
 # You can provide all hepdata entries in a list (as in "hepdata" block), or you can
 # provide separate config entries for one or more hepdata entries (as in "hepdata_CMS_HadronRAA_010" block).
 #-----------------------------------------------------------------------------------------------
-hepdata1:
+hepdataHads:
   filepath: '/scratch/user/cameron.parker/projects/STAT/input/vac-data/'
   data_vrs: 'Version 1.0'
   data_str: 'Data'
@@ -21,7 +21,7 @@ hepdata1:
   data_meas: ['charged-hads']
   data_index: [0]
 
-hepdata2:
+hepdataJet2:
   filepath: '/scratch/user/cameron.parker/projects/STAT/input/vac-data/'
   data_vrs: 'Version 1.0'
   data_str: 'Data'
@@ -32,7 +32,7 @@ hepdata2:
   data_meas: ['jets-2']
   data_index: [0]
 
-hepdata3:
+hepdataJet3:
   filepath: '/scratch/user/cameron.parker/projects/STAT/input/vac-data/'
   data_vrs: 'Version 1.0'
   data_str: 'Data'
@@ -43,7 +43,7 @@ hepdata3:
   data_meas: ['jets-3']
   data_index: [1]
 
-hepdata3:
+hepdataJet4:
   filepath: '/scratch/user/cameron.parker/projects/STAT/input/vac-data/'
   data_vrs: 'Version 1.0'
   data_str: 'Data'
@@ -52,4 +52,37 @@ hepdata3:
   data_exp: ['CMS']
   data_sys: ['PrPr2760']
   data_meas: ['jets-4']
+  data_index: [2]
+
+hepdataPions:
+  filepath: '/scratch/user/cameron.parker/projects/STAT/input/vac-data/'
+  data_vrs: 'Version 1.0'
+  data_str: 'Data'
+  data_url: ['https://www.hepdata.net/download/table/ins1276299/Table%201/1/yaml']
+  data_doi: ['https://doi.org/10.17182/hepdata.62520']
+  data_exp: ['ALICE']
+  data_sys: ['PrPr2760']
+  data_meas: ['pions']
+  data_index: [2]
+
+hepdataKaons:
+  filepath: '/scratch/user/cameron.parker/projects/STAT/input/vac-data/'
+  data_vrs: 'Version 1.0'
+  data_str: 'Data'
+  data_url: ['https://www.hepdata.net/download/table/ins1276299/Table%202/1/yaml']
+  data_doi: ['https://doi.org/10.17182/hepdata.62520']
+  data_exp: ['ALICE']
+  data_sys: ['PrPr2760']
+  data_meas: ['kaons']
+  data_index: [2]
+
+hepdataProtons:
+  filepath: '/scratch/user/cameron.parker/projects/STAT/input/vac-data/'
+  data_vrs: 'Version 1.0'
+  data_str: 'Data'
+  data_url: ['https://www.hepdata.net/download/table/ins1276299/Table%203/1/yaml']
+  data_doi: ['https://doi.org/10.17182/hepdata.62520']
+  data_exp: ['ALICE']
+  data_sys: ['PrPr2760']
+  data_meas: ['protons']
   data_index: [2]
